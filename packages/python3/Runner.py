@@ -37,5 +37,5 @@ class Runner:
 
             self.remote_process_client.write(actions, strategy.custom_rendering())
 
-
-Runner().run()
+if __name__ == '__main__':
+    Runner().run()
