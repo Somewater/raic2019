@@ -20,13 +20,13 @@ def clamp_vector(vector: Vector3D, length: float) -> Vector3D:
         return vector
     return vector.normalize() * length
 
-def min_dan(v1: Tuple[float, Vector3D], v2: Tuple[float, Vector3D]) -> Vector3D:
+def min_dan(v1: Tuple[float, Vector3D], v2: Tuple[float, Vector3D]) -> Tuple[float, Vector3D]:
     if v1[0] < v2[0]:
         return v1
     else:
         return v2
 
-def dan_to_arena_quarter(arena: Arena, point: Vector3D):
+def dan_to_arena_quarter(arena: Arena, point: Vector3D) -> Tuple[float, Vector3D]:
     # Ground
     dan = dan_to_plane(point, Vector3D(0, 0, 0), Vector3D(0, 1, 0))
 
@@ -121,7 +121,7 @@ def dan_to_arena_quarter(arena: Arena, point: Vector3D):
             (arena.goal_width / 2) - arena.goal_top_radius,
             arena.goal_height - arena.goal_top_radius,
             0)
-        v: Vector3D = point.x - o
+        v: Vector3D = point - o
         if v.x > 0 and v.y > 0:
             o = o + v.normalize() * (arena.goal_top_radius + arena.goal_side_radius)
             dan = min_dan(dan, dan_to_sphere_outer(
@@ -189,7 +189,7 @@ def dan_to_arena_quarter(arena: Arena, point: Vector3D):
         # Goal outer corner
         o = Vector3D(
             (arena.goal_width / 2) + arena.goal_side_radius,
-            0
+            0,
             (arena.depth / 2) + arena.goal_side_radius)
         v = Vector3D(point.x, 0, point.z) - o
         if v.x < 0 and v.y < 0 \
@@ -213,7 +213,7 @@ def dan_to_arena_quarter(arena: Arena, point: Vector3D):
         # Corner
         if point.x > (arena.width / 2) - arena.corner_radius \
                 and point.z > (arena.depth / 2) - arena.corner_radius:
-            corner_o = (
+            corner_o = Vector3D(
                 (arena.width / 2) - arena.corner_radius,
                 0,
                 (arena.depth / 2) - arena.corner_radius
@@ -221,7 +221,7 @@ def dan_to_arena_quarter(arena: Arena, point: Vector3D):
             n = Vector3D(point.x, 0, point.z) - corner_o
             dist = n.len()
             if dist > arena.corner_radius - arena.bottom_radius:
-                n = n / dist
+                n = n * (1/dist)
                 o2 = corner_o + n * (arena.corner_radius - arena.bottom_radius)
                 dan = min_dan(dan, dan_to_sphere_inner(
                         point,
@@ -277,9 +277,9 @@ def dan_to_arena(arena: Arena, point: Vector3D):
         point.x = -point.x
     if negate_z:
         point.z = -point.z
-    result = dan_to_arena_quarter(arena, point)
+    result_distance, result_normal = dan_to_arena_quarter(arena, point)
     if negate_x:
-        result.normal.x = -result.normal.x
+        result_normal.x = -result_normal.x
     if negate_z:
-        result.normal.z = -result.normal.z
-    return result
+        result_normal.z = -result_normal.z
+    return (result_distance, result_normal)

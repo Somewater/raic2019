@@ -19,7 +19,10 @@ class Vector3D:
         return Vector3D(self.x * num, self.y * num, self.z * num)
 
     def normalize(self) -> 'Vector3D':
-        return Vector3D(self.x/self.len(), self.y/self.len(), self.z/self.len())
+        if self.len() == 0:
+            return self
+        else:
+            return Vector3D(self.x/self.len(), self.y/self.len(), self.z/self.len())
 
     def dot(self, other: 'Vector3D') -> float:
         return self.x * other.x + self.y * other.y + self.z * other.z

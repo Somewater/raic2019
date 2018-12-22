@@ -2,7 +2,7 @@ from model.action import Action
 from model.game import Game
 from model.robot import Robot
 from model.rules import Rules
-from vector import *
+from engine import Engine
 
 EPS = 1e-5
 # Константы, взятые из документации
@@ -49,6 +49,8 @@ class MyStrategy:
         return ""
     # Код стратегии
     def act(self, me: Robot, rules: Rules, game: Game, action: Action):
+        engine = Engine(me, rules, game)
+        engine.tick()
 
         # Наша стратегия умеет играть только на земле
         # Поэтому, если мы не касаемся земли, будет использовать нитро
