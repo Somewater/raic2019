@@ -202,7 +202,7 @@ def update(rules: Rules,
                 pack.respawn_ticks = rules.NITRO_PACK_RESPAWN_TICKS
 
 def tick(rules: Rules,
-         robots: List[Tuple[RobotEntity, Action]],
+         robots: List[RobotEntity],
          ball: BallEntity,
          nitros: List[NitroEntity],
          game_state: GameState):
