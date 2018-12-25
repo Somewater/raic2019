@@ -3,6 +3,9 @@ from model.game import Game
 from model.robot import Robot
 from model.rules import Rules
 from engine import Engine
+from visualizer import Visualizer
+from enum import Enum
+import os
 
 EPS = 1e-5
 # Константы, взятые из документации
@@ -44,13 +47,40 @@ class Vector2D:
     def normalize(self):
         return Vector2D(self.x/self.len(), self.z/self.len())
 
+class Env(Enum):
+    LOCAL = 1
+    PROD = 2
+    def is_local(self):
+        return self == Env.LOCAL
+    def is_prod(self):
+        return self == Env.PROD
+
 class MyStrategy:
     def custom_rendering(self):
         return ""
+    def __init__(self):
+        self.engine = None
+        self.env = Env.PROD
+        self.script_root = os.path.dirname(os.path.realpath(__file__))
+        self.project_root = os.path.realpath(os.path.join(self.script_root, '..', '..'))
+        if os.path.exists(os.path.join(self.script_root, 'local.txt')):
+            self.env = Env.LOCAL
+        if self.env.is_local():
+            self.visualizer = Visualizer(self.project_root)
+        else:
+            self.visualizer = None
+
     # Код стратегии
     def act(self, me: Robot, rules: Rules, game: Game, action: Action):
         engine = Engine(me, rules, game)
         engine.tick()
+        if self.env.is_local() and game.current_tick > 1 and game.current_tick % 10 == 0:
+            self.visualizer.start(engine)
+            if game.current_tick > 100:
+                print('EVALUATION')
+                while True:
+                    engine.tick()
+                    self.visualizer.start(engine)
 
         # Наша стратегия умеет играть только на земле
         # Поэтому, если мы не касаемся земли, будет использовать нитро
@@ -144,4 +174,3 @@ class MyStrategy:
         action.target_velocity_z = target_velocity.z
         action.jump_speed = ROBOT_MAX_JUMP_SPEED if jump else 0.0
         action.use_nitro = False
->>>>>>> quick start strategy & typed model

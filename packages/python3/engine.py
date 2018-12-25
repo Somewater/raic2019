@@ -4,6 +4,7 @@ from model import *
 from vector import *
 from predefined import *
 import random
+import time
 
 class GameState:
     __slots__ = 'my_score', 'enemy_score'
@@ -30,7 +31,7 @@ class Entity:
         self.radius_change_speed = radius_change_speed
 
 class RobotEntity(Entity):
-    __slots__ = 'touch', 'touch_normal', 'nitro_amount', 'action'
+    __slots__ = 'touch', 'touch_normal', 'nitro_amount', 'action', 'id', 'is_teammate'
 
     @staticmethod
     def from_robot(robot: Robot, action: Action, rules: Rules):
@@ -41,6 +42,8 @@ class RobotEntity(Entity):
                            radius_change_speed=action.jump_speed,
                            touch=robot.touch,
                            touch_normal= Vector3D(robot.touch_normal_x, robot.touch_normal_y, robot.touch_normal_z) if robot.touch else None,
+                           id=robot.id,
+                           is_teammate=robot.is_teammate,
                            action=action)
 
     def __init__(self,
@@ -52,11 +55,15 @@ class RobotEntity(Entity):
                  touch: bool = False,
                  touch_normal: Vector3D = None,
                  nitro_amount: float = 0.0,
+                 id: int = 0,
+                 is_teammate: bool = False,
                  action: Action = None):
         super().__init__(position, radius, mass, velocity, radius_change_speed)
         self.touch: bool = touch
         self.touch_normal: Vector3D = touch_normal
         self.nitro_amount: float = nitro_amount
+        self.id = id
+        self.is_teammate = is_teammate
         self.action = action
 
 class BallEntity(Entity):
@@ -223,4 +230,6 @@ class Engine:
         self.game_state = GameState(game)
 
     def tick(self):
+        start = time.time()
         tick(self.rules, self.robot_entities, self.ball_entity, self.nitro_entities, self.game_state)
+        #print('tick in %.2f ms' % (1000 * (time.time() - start)))
