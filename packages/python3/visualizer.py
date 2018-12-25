@@ -28,16 +28,16 @@ class Visualizer:
         obj_reader = rc.WavefrontReader(obj_filename)
         self.ball = obj_reader.get_mesh("Sphere")
         self.ball.scale.xyz = 2,2,2
-        self.ball.textures.append(rc.Texture.from_image('/media/lin/lab/Contests/2018/raic2018/localrunner-linux/assets/ball/texture.png'))
+        self.ball.textures.append(rc.Texture.from_image(os.path.join(self.root, 'localrunner/assets/ball/texture.png')))
         self.arena.add_child(self.ball)
         meshes.append(self.ball)
 
         for robot in engine.robot_entities:
             robot_mesh = obj_reader.get_mesh("Sphere")
             if robot.is_teammate:
-                robot_mesh.textures.append(rc.Texture.from_image('/media/lin/lab/Contests/2018/raic2018/localrunner-linux/assets/robot/green/texture.png'))
+                robot_mesh.textures.append(rc.Texture.from_image(os.path.join(self.root, 'localrunner/assets/robot/green/texture.png')))
             else:
-                robot_mesh.textures.append(rc.Texture.from_image('/media/lin/lab/Contests/2018/raic2018/localrunner-linux/assets/robot/orange/texture.png'))
+                robot_mesh.textures.append(rc.Texture.from_image(os.path.join(self.root, 'localrunner/assets/robot/orange/texture.png')))
             self.robot_by_id[robot.id] = robot_mesh
             self.arena.add_child(robot_mesh)
             meshes.append(robot_mesh)
