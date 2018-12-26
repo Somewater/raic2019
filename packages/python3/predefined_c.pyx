@@ -1,4 +1,4 @@
-from vector cimport Vector3D
+from vector_c cimport Vector3D
 
 cdef class ArenaStruct:
     def __cinit__(self,
@@ -35,7 +35,7 @@ cdef Vector3D clamp_vector(Vector3D vector, float length):
         return vector
     return vector.normalize().mul(length)
 
-cdef min_dan(Dan v1, Dan v2):
+cdef Dan min_dan(Dan v1, Dan v2):
     if v1.distance < v2.distance:
         return v1
     else:

@@ -78,6 +78,9 @@ class MyStrategy:
             self.visualizer.start(engine)
             if game.current_tick > 300:
                 print('EVALUATION')
+                engine.ball_entity.velocity.set_x(0)
+                engine.ball_entity.velocity.set_y(0)
+                engine.ball_entity.velocity.set_z(rules.MAX_ENTITY_SPEED)
                 while True:
                     engine.tick()
                     self.visualizer.start(engine)
