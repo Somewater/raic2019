@@ -1,8 +1,8 @@
 from typing import Callable, Tuple, Any
 
 from model import *
-from vector import *
-from predefined import *
+from vector_c import Vector3D
+from predefined_c import dan_to_arena
 import random
 import time
 

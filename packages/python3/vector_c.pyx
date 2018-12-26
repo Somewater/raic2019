@@ -3,9 +3,12 @@ cdef class Vector3D:
         self.x = x
         self.y = y
         self.z = z
+        self._len = -2.0
 
     cpdef float len(self):
-        return ((self.x * self.x) + (self.y * self.y) + (self.z * self.z))**0.5
+        if self._len < -1.0:
+            self._len = ((self.x * self.x) + (self.y * self.y) + (self.z * self.z))**0.5
+        return self._len
 
     cdef Vector3D sub(self, Vector3D other_sub):
         return Vector3D(self.x - other_sub.x, self.y - other_sub.y, self.z - other_sub.z)
@@ -57,4 +60,10 @@ cdef class Vector3D:
 
     def set_z(self, value):
         self.z = value
+
+    def __repr__(self):
+        return "(%f, %f, %f)" % (self.x, self.y, self.z)
+
+    def __str__(self):
+        return self.__repr__()
 

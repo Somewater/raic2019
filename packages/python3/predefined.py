@@ -21,6 +21,10 @@ def clamp_vector(vector: Vector3D, length: float) -> Vector3D:
     return vector.normalize() * length
 
 def min_dan(v1: Tuple[float, Vector3D], v2: Tuple[float, Vector3D]) -> Tuple[float, Vector3D]:
+    if v1[0] < -1.0:
+        raise RuntimeError('distnce too big: %f' % v1[0])
+    if v2[0] < -1.0:
+        raise RuntimeError('distnce too big: %f' % v2[0])
     if v1[0] < v2[0]:
         return v1
     else:
@@ -215,10 +219,10 @@ def dan_to_arena_quarter(arena: Arena, point: Vector3D) -> Tuple[float, Vector3D
                 and point.z > (arena.depth / 2) - arena.corner_radius:
             corner_o = Vector3D(
                 (arena.width / 2) - arena.corner_radius,
-                0,
-                (arena.depth / 2) - arena.corner_radius
+                (arena.depth / 2) - arena.corner_radius,
+                0
             )
-            n = Vector3D(point.x, 0, point.z) - corner_o
+            n = Vector3D(point.x, point.z, 0) - corner_o
             dist = n.len()
             if dist > arena.corner_radius - arena.bottom_radius:
                 n = n * (1/dist)
@@ -256,10 +260,10 @@ def dan_to_arena_quarter(arena: Arena, point: Vector3D) -> Tuple[float, Vector3D
                 and point.z > (arena.depth / 2) - arena.corner_radius:
             corner_o = Vector3D(
                 (arena.width / 2) - arena.corner_radius,
-                0,
-                (arena.depth / 2) - arena.corner_radius
+                (arena.depth / 2) - arena.corner_radius,
+                0
             )
-            dv = Vector3D(point.x, 0, point.z) - corner_o
+            dv = Vector3D(point.x, point.z, 0) - corner_o
             if dv.len() > arena.corner_radius - arena.top_radius:
                 n = dv.normalize()
                 o2 = corner_o + n * (arena.corner_radius - arena.top_radius)
@@ -271,6 +275,7 @@ def dan_to_arena_quarter(arena: Arena, point: Vector3D) -> Tuple[float, Vector3D
     return dan
 
 def dan_to_arena(arena: Arena, point: Vector3D):
+    point = Vector3D(point.get_x(), point.get_y(), point.get_z())
     negate_x = point.x < 0
     negate_z = point.z < 0
     if negate_x:

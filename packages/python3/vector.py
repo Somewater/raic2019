@@ -33,3 +33,21 @@ class Vector3D:
     def max(self, value: float) -> 'Vector3D':
         return Vector3D(max(self.x, value), max(self.y, value), max(self.z, value))
 
+    def set_x(self, value):
+        self.x = value
+
+    def set_y(self, value):
+        self.y = value
+
+    def set_z(self, value):
+        self.z = value
+
+    def get_x(self):
+        return self.x
+
+    def get_y(self):
+        return self.y
+
+    def get_z(self):
+        return self.z
+

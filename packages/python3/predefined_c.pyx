@@ -244,10 +244,10 @@ cdef Dan dan_to_arena_quarter(ArenaStruct arena, Vector3D point):
                 and point.z > (arena.depth / 2) - arena.corner_radius:
             corner_o = Vector3D(
                 (arena.width / 2) - arena.corner_radius,
-                0,
-                (arena.depth / 2) - arena.corner_radius
+                (arena.depth / 2) - arena.corner_radius,
+                0
             )
-            n = Vector3D(point.x, 0, point.z) - corner_o
+            n = Vector3D(point.x, point.z, 0) - corner_o
             dist = n.len()
             if dist > arena.corner_radius - arena.bottom_radius:
                 n = n * (1/dist)
@@ -285,10 +285,10 @@ cdef Dan dan_to_arena_quarter(ArenaStruct arena, Vector3D point):
                 and point.z > (arena.depth / 2) - arena.corner_radius:
             corner_o = Vector3D(
                 (arena.width / 2) - arena.corner_radius,
-                0,
-                (arena.depth / 2) - arena.corner_radius
+                (arena.depth / 2) - arena.corner_radius,
+                0
             )
-            dv = Vector3D(point.x, 0, point.z) - corner_o
+            dv = Vector3D(point.x, point.z, 0) - corner_o
             if dv.len() > arena.corner_radius - arena.top_radius:
                 n = dv.normalize()
                 o2 = corner_o + n * (arena.corner_radius - arena.top_radius)
@@ -299,10 +299,11 @@ cdef Dan dan_to_arena_quarter(ArenaStruct arena, Vector3D point):
 
     return dan
 
-def dan_to_arena(arena0, Vector3D point):
+def dan_to_arena(arena0, Vector3D point0):
     cdef ArenaStruct arena = ArenaStruct(arena0.width, arena0.height, arena0.depth, arena0.bottom_radius,
                                          arena0.top_radius, arena0.corner_radius, arena0.goal_top_radius,
-                                         arena0.goal_width, arena0.goal_height, arena0.depth, arena0.goal_side_radius)
+                                         arena0.goal_width, arena0.goal_height, arena0.goal_depth, arena0.goal_side_radius)
+    point = Vector3D(point0.x, point0.y, point0.z)
     cdef bint negate_x = point.x < 0
     cdef bint negate_z = point.z < 0
     if negate_x:

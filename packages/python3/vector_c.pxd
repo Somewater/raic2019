@@ -1,5 +1,5 @@
 cdef class Vector3D:
-    cdef float x, y, z
+    cdef float x, y, z, _len
 
     cpdef float len(self)
 
