@@ -1,34 +1,63 @@
-from typing import Tuple
+from vector cimport Vector3D
 
-from model import *
-from vector import *
+cdef class ArenaStruct:
+    def __cinit__(self,
+                  float width,
+                  float height,
+                  float depth,
+                  float bottom_radius,
+                  float top_radius,
+                  float corner_radius,
+                  float goal_top_radius,
+                  float goal_width,
+                  float goal_height,
+                  float goal_depth,
+                  float goal_side_radius):
+        self.width = width
+        self.height = height
+        self.depth = depth
+        self.bottom_radius = bottom_radius
+        self.top_radius = top_radius
+        self.corner_radius = corner_radius
+        self.goal_top_radius = goal_top_radius
+        self.goal_width = goal_width
+        self.goal_height = goal_height
+        self.goal_depth = goal_depth
+        self.goal_side_radius = goal_side_radius
 
-def dan_to_plane(point: Vector3D, point_on_plane: Vector3D, plane_normal: Vector3D) -> Tuple[float, Vector3D]:
-    return (point - point_on_plane).dot(plane_normal), plane_normal
+cdef class Dan:
+    def __cinit__(self, float distance, Vector3D normal):
+        self.distance = distance
+        self.normal = normal
 
-def dan_to_sphere_inner(point: Vector3D, sphere_center: Vector3D, sphere_radius: float) -> Tuple[float, Vector3D]:
-    return sphere_radius - (point - sphere_center).len(), (sphere_center - point).normalize()
-
-def dan_to_sphere_outer(point: Vector3D, sphere_center: Vector3D, sphere_radius: float):
-    return (point - sphere_center).len() - sphere_radius, (point - sphere_center).normalize()
-
-def clamp_float(value: float, minumum: float, maximum: float) -> float:
-    return max(min(value, maximum), minumum)
-
-def clamp_vector(vector: Vector3D, length: float) -> Vector3D:
+cdef Vector3D clamp_vector(Vector3D vector, float length):
     if vector.len() <= length:
         return vector
-    return vector.normalize() * length
+    return vector.normalize().mul(length)
 
-def min_dan(v1: Tuple[float, Vector3D], v2: Tuple[float, Vector3D]) -> Tuple[float, Vector3D]:
-    if v1[0] < v2[0]:
+cdef min_dan(Dan v1, Dan v2):
+    if v1.distance < v2.distance:
         return v1
     else:
         return v2
 
-def dan_to_arena_quarter(arena: Arena, point: Vector3D) -> Tuple[float, Vector3D]:
+cdef Dan dan_to_plane(Vector3D point, Vector3D point_on_plane, Vector3D plane_normal):
+    return Dan((point - point_on_plane).dot(plane_normal), plane_normal)
+
+cdef dan_to_sphere_inner(Vector3D point, Vector3D sphere_center, float sphere_radius):
+    return Dan(sphere_radius - (point - sphere_center).len(), (sphere_center - point).normalize())
+
+cdef Dan dan_to_sphere_outer(Vector3D point, Vector3D sphere_center, float sphere_radius):
+    return Dan((point - sphere_center).len() - sphere_radius, (point - sphere_center).normalize())
+
+cdef float clamp_float(float value, float minumum, float maximum):
+    return max(min(value, maximum), minumum)
+
+cdef Dan dan_to_arena_quarter(ArenaStruct arena, Vector3D point):
     # Ground
-    dan = dan_to_plane(point, Vector3D(0, 0, 0), Vector3D(0, 1, 0))
+    cdef Vector3D o, v, o2, corner_o, n
+    cdef float dist
+    cdef Dan dan = dan_to_plane(point, Vector3D(0, 0, 0), Vector3D(0, 1, 0))
 
     # Ceiling
     dan = min_dan(dan, dan_to_plane(point, Vector3D(0, arena.height, 0), Vector3D(0, -1, 0)))
@@ -64,7 +93,7 @@ def dan_to_arena_quarter(arena: Arena, point: Vector3D) -> Tuple[float, Vector3D
         dan = min_dan(dan, dan_to_plane(point, Vector3D(0, arena.goal_height, 0), Vector3D(0, -1, 0)))
 
     # Goal back corners
-    assert arena.bottom_radius == arena.goal_top_radius
+    #assert arena.bottom_radius == arena.goal_top_radius
     if point.z > (arena.depth / 2) + arena.goal_depth - arena.bottom_radius:
         dan = min_dan(dan, dan_to_sphere_inner(
                 point,
@@ -121,7 +150,7 @@ def dan_to_arena_quarter(arena: Arena, point: Vector3D) -> Tuple[float, Vector3D
             (arena.goal_width / 2) - arena.goal_top_radius,
             arena.goal_height - arena.goal_top_radius,
             0)
-        v: Vector3D = point - o
+        v = point - o
         if v.x > 0 and v.y > 0:
             o = o + v.normalize() * (arena.goal_top_radius + arena.goal_side_radius)
             dan = min_dan(dan, dan_to_sphere_outer(
@@ -189,9 +218,9 @@ def dan_to_arena_quarter(arena: Arena, point: Vector3D) -> Tuple[float, Vector3D
         # Goal outer corner
         o = Vector3D(
             (arena.goal_width / 2) + arena.goal_side_radius,
-            0,
-            (arena.depth / 2) + arena.goal_side_radius)
-        v = Vector3D(point.x, 0, point.z) - o
+            (arena.depth / 2) + arena.goal_side_radius,
+            0)
+        v = Vector3D(point.x, point.z, 0) - o
         if v.x < 0 and v.y < 0 \
                 and v.len() < arena.goal_side_radius + arena.bottom_radius:
             o = o + v.normalize() * (arena.goal_side_radius + arena.bottom_radius)
@@ -270,14 +299,19 @@ def dan_to_arena_quarter(arena: Arena, point: Vector3D) -> Tuple[float, Vector3D
 
     return dan
 
-def dan_to_arena(arena: Arena, point: Vector3D):
-    negate_x = point.x < 0
-    negate_z = point.z < 0
+def dan_to_arena(arena0, Vector3D point):
+    cdef ArenaStruct arena = ArenaStruct(arena0.width, arena0.height, arena0.depth, arena0.bottom_radius,
+                                         arena0.top_radius, arena0.corner_radius, arena0.goal_top_radius,
+                                         arena0.goal_width, arena0.goal_height, arena0.depth, arena0.goal_side_radius)
+    cdef bint negate_x = point.x < 0
+    cdef bint negate_z = point.z < 0
     if negate_x:
         point.x = -point.x
     if negate_z:
         point.z = -point.z
-    result_distance, result_normal = dan_to_arena_quarter(arena, point)
+    cdef Dan dan = dan_to_arena_quarter(arena, point)
+    cdef Vector3D result_normal = dan.normal
+    cdef float result_distance = dan.distance
     if negate_x:
         result_normal.x = -result_normal.x
     if negate_z:

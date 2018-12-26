@@ -84,10 +84,10 @@ class Visualizer:
     def update_positions(self, engine: Engine):
         global delta
         ball_pos =  engine.ball_entity.position
-        self.ball.position.xyz = ball_pos.x, ball_pos.y + delta, ball_pos.z
+        self.ball.position.xyz = ball_pos.get_x(), ball_pos.get_y() + delta, ball_pos.get_z()
         for robot in engine.robot_entities:
             robot_pos = robot.position
-            self.robot_by_id[robot.id].position.xyz = robot_pos.x, robot_pos.y + delta, robot_pos.z
+            self.robot_by_id[robot.id].position.xyz = robot_pos.get_x(), robot_pos.get_y() + delta, robot_pos.get_z()
 
     def start(self, engine: Engine):
         if not self.started:

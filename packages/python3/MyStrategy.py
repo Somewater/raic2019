@@ -76,7 +76,7 @@ class MyStrategy:
         engine.tick()
         if self.env.is_local() and game.current_tick > 1 and game.current_tick % 10 == 0:
             self.visualizer.start(engine)
-            if game.current_tick > 100:
+            if game.current_tick > 300:
                 print('EVALUATION')
                 while True:
                     engine.tick()

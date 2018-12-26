@@ -6,6 +6,12 @@ from predefined import *
 import random
 import time
 
+def clamp_vector(vector: Vector3D, value: float):
+    if vector.len() <= value:
+        return vector
+    else:
+        return vector.normalize() * value
+
 class GameState:
     __slots__ = 'my_score', 'enemy_score'
     def __init__(self, game: Game):
@@ -138,8 +144,8 @@ def collide_with_arena(rules: Rules, e: Entity):
 def move(rules: Rules, e: Entity, delta_time: float):
     e.velocity = clamp_vector(e.velocity, rules.MAX_ENTITY_SPEED)
     e.position += e.velocity * delta_time
-    e.position.y -= rules.GRAVITY * delta_time * delta_time / 2
-    e.velocity.y -= rules.GRAVITY * delta_time
+    e.position.set_y(e.position.get_y() - rules.GRAVITY * delta_time * delta_time / 2)
+    e.velocity.set_y(e.velocity.get_y() - rules.GRAVITY * delta_time)
 
 def update(rules: Rules,
            delta_time: float,
@@ -155,7 +161,7 @@ def update(rules: Rules,
             target_velocity -= robot.touch_normal * robot.touch_normal.dot(target_velocity)
             target_velocity_change = target_velocity - robot.velocity
             if target_velocity_change.len() > 0:
-                acceleration = rules.ROBOT_ACCELERATION * max(0, robot.touch_normal.y)
+                acceleration = rules.ROBOT_ACCELERATION * max(0, robot.touch_normal.get_y())
                 robot.velocity += (target_velocity_change.normalize() * acceleration * delta_time).min(target_velocity_change.len())
         if robot.action.use_nitro:
             target_velocity_change = (target_velocity - robot.velocity).min(robot.nitro_amount * rules.NITRO_POINT_VELOCITY_CHANGE)
@@ -163,7 +169,7 @@ def update(rules: Rules,
                 acceleration = target_velocity_change.normalize() * rules.ROBOT_NITRO_ACCELERATION
                 velocity_change = (acceleration * delta_time).min(target_velocity_change.len())
                 robot.velocity += velocity_change
-                robot.nitro_amount -= velocity_change.len() / rules.NITRO_POINT_VELOCITY_CHANGE # TODO: don't touch model
+                robot.nitro_amount -= velocity_change.len() / rules.NITRO_POINT_VELOCITY_CHANGE
 
         move(rules, robot, delta_time)
         robot.radius = rules.ROBOT_MIN_RADIUS + (rules.ROBOT_MAX_RADIUS - rules.ROBOT_MIN_RADIUS) * robot.action.jump_speed / rules.ROBOT_MAX_JUMP_SPEED
@@ -184,8 +190,8 @@ def update(rules: Rules,
             robot.touch = True
             robot.touch_normal = collision_normal
     collide_with_arena(rules, ball)
-    if abs(ball.position.z) > rules.arena.depth / 2 + ball.radius:
-        if ball.position.z > 0: # TODO: check it
+    if abs(ball.position.get_z()) > rules.arena.depth / 2 + ball.radius:
+        if ball.position.get_z() > 0: # TODO: check it
             game_state.my_score += 1
         else:
             game_state.enemy_score += 1
@@ -232,4 +238,4 @@ class Engine:
     def tick(self):
         start = time.time()
         tick(self.rules, self.robot_entities, self.ball_entity, self.nitro_entities, self.game_state)
-        #print('tick in %.2f ms' % (1000 * (time.time() - start)))
+        print('tick in %.2f ms' % (1000 * (time.time() - start)))
