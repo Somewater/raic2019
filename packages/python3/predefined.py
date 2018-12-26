@@ -121,7 +121,7 @@ def dan_to_arena_quarter(arena: Arena, point: Vector3D) -> Tuple[float, Vector3D
             (arena.goal_width / 2) - arena.goal_top_radius,
             arena.goal_height - arena.goal_top_radius,
             0)
-        v: Vector3D = point - o
+        v = point - o
         if v.x > 0 and v.y > 0:
             o = o + v.normalize() * (arena.goal_top_radius + arena.goal_side_radius)
             dan = min_dan(dan, dan_to_sphere_outer(
@@ -189,9 +189,9 @@ def dan_to_arena_quarter(arena: Arena, point: Vector3D) -> Tuple[float, Vector3D
         # Goal outer corner
         o = Vector3D(
             (arena.goal_width / 2) + arena.goal_side_radius,
-            0,
-            (arena.depth / 2) + arena.goal_side_radius)
-        v = Vector3D(point.x, 0, point.z) - o
+            (arena.depth / 2) + arena.goal_side_radius,
+            0)
+        v = Vector3D(point.x, point.z, 0) - o
         if v.x < 0 and v.y < 0 \
                 and v.len() < arena.goal_side_radius + arena.bottom_radius:
             o = o + v.normalize() * (arena.goal_side_radius + arena.bottom_radius)
