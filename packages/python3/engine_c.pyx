@@ -345,7 +345,7 @@ cdef class Engine:
                 rules.arena.goal_depth,
                 rules.arena.goal_side_radius),
             rules.team_size,
-            rules.seed,
+            rules.seed % 2147483648,
             rules.ROBOT_MIN_RADIUS,
             rules.ROBOT_MAX_RADIUS,
             rules.ROBOT_MAX_JUMP_SPEED,
