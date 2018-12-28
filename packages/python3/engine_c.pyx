@@ -312,8 +312,9 @@ cdef tick(RulesStruct rules,
           nitros: List[NitroEntity],
           GameState game_state):
     cdef float delta_time = 1 / rules.TICKS_PER_SECOND
-    for _ in range(rules.MICROTICKS_PER_TICK):
-        update(rules, delta_time / rules.MICROTICKS_PER_TICK, robots, ball, nitros, game_state)
+    #for _ in range(rules.MICROTICKS_PER_TICK):
+    #    update(rules, delta_time / rules.MICROTICKS_PER_TICK, robots, ball, nitros, game_state)
+    update(rules, delta_time, robots, ball, nitros, game_state)
     for pack in nitros:
         if pack.nitro_amount > 0:
             continue
