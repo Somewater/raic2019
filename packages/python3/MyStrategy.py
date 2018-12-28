@@ -2,7 +2,7 @@ from model.action import Action
 from model.game import Game
 from model.robot import Robot
 from model.rules import Rules
-from engine_c import Engine
+from engine import Engine
 from visualizer import Visualizer
 from enum import Enum
 import os

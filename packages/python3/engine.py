@@ -1,8 +1,8 @@
 from typing import Callable, Tuple, Any
 
 from model import *
-from vector_c import Vector3D
-from predefined_c import dan_to_arena
+from vector import Vector3D
+from predefined import dan_to_arena
 import random
 import time
 
@@ -35,6 +35,15 @@ class Entity:
         self.mass = mass
         self.velocity: Vector3D = velocity or Vector3D()
         self.radius_change_speed = radius_change_speed
+
+    def get_entity(self):
+        return self
+
+    def get_position(self):
+        return self.position
+
+    def get_velocity(self):
+        return self.velocity
 
 class RobotEntity(Entity):
     __slots__ = 'touch', 'touch_normal', 'nitro_amount', 'action', 'id', 'is_teammate'
@@ -71,6 +80,12 @@ class RobotEntity(Entity):
         self.id = id
         self.is_teammate = is_teammate
         self.action = action
+
+    def get_is_teammate(self):
+        return self.is_teammate
+
+    def get_id(self):
+        return self.id
 
 class BallEntity(Entity):
     @staticmethod
@@ -239,3 +254,9 @@ class Engine:
         start = time.time()
         tick(self.rules, self.robot_entities, self.ball_entity, self.nitro_entities, self.game_state)
         print('tick in %.2f ms' % (1000 * (time.time() - start)))
+
+    def get_robots(self):
+        return self.robot_entities
+
+    def get_ball(self):
+        return self.ball_entity
