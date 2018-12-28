@@ -1,30 +1,5 @@
 from vector_c cimport Vector3D
 
-cdef class ArenaStruct:
-    def __cinit__(self,
-                  float width,
-                  float height,
-                  float depth,
-                  float bottom_radius,
-                  float top_radius,
-                  float corner_radius,
-                  float goal_top_radius,
-                  float goal_width,
-                  float goal_height,
-                  float goal_depth,
-                  float goal_side_radius):
-        self.width = width
-        self.height = height
-        self.depth = depth
-        self.bottom_radius = bottom_radius
-        self.top_radius = top_radius
-        self.corner_radius = corner_radius
-        self.goal_top_radius = goal_top_radius
-        self.goal_width = goal_width
-        self.goal_height = goal_height
-        self.goal_depth = goal_depth
-        self.goal_side_radius = goal_side_radius
-
 cdef class Dan:
     def __cinit__(self, float distance, Vector3D normal):
         self.distance = distance
@@ -299,11 +274,8 @@ cdef Dan dan_to_arena_quarter(ArenaStruct arena, Vector3D point):
 
     return dan
 
-def dan_to_arena(arena0, Vector3D point0):
-    cdef ArenaStruct arena = ArenaStruct(arena0.width, arena0.height, arena0.depth, arena0.bottom_radius,
-                                         arena0.top_radius, arena0.corner_radius, arena0.goal_top_radius,
-                                         arena0.goal_width, arena0.goal_height, arena0.goal_depth, arena0.goal_side_radius)
-    point = Vector3D(point0.x, point0.y, point0.z)
+cdef Dan dan_to_arena(ArenaStruct arena, Vector3D point0):
+    cdef Vector3D point = Vector3D(point0.x, point0.y, point0.z)
     cdef bint negate_x = point.x < 0
     cdef bint negate_z = point.z < 0
     if negate_x:
@@ -317,4 +289,10 @@ def dan_to_arena(arena0, Vector3D point0):
         result_normal.x = -result_normal.x
     if negate_z:
         result_normal.z = -result_normal.z
-    return (result_distance, result_normal)
+    return Dan(result_distance, result_normal)
+
+def dan_to_arena(arena0, Vector3D point0):
+    cdef ArenaStruct arena = ArenaStruct(arena0.width, arena0.height, arena0.depth, arena0.bottom_radius,
+                                         arena0.top_radius, arena0.corner_radius, arena0.goal_top_radius,
+                                         arena0.goal_width, arena0.goal_height, arena0.goal_depth, arena0.goal_side_radius)
+    dan_to_arena(arena, point0)

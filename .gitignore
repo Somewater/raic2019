@@ -28,3 +28,6 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+/packages/python3/*.c
+/packages/python3/*.so

@@ -2,7 +2,7 @@ from model.action import Action
 from model.game import Game
 from model.robot import Robot
 from model.rules import Rules
-from engine import Engine
+from engine_c import Engine
 from visualizer import Visualizer
 from enum import Enum
 import os
@@ -78,9 +78,9 @@ class MyStrategy:
             self.visualizer.start(engine)
             if game.current_tick > 100:
                 print('EVALUATION')
-                engine.ball_entity.velocity.set_x(0)
-                engine.ball_entity.velocity.set_y(0)
-                engine.ball_entity.velocity.set_z(rules.MAX_ENTITY_SPEED)
+                engine.get_ball().get_entity().get_velocity().set_x(0)
+                engine.get_ball().get_entity().get_velocity().set_y(0)
+                engine.get_ball().get_entity().get_velocity().set_z(rules.MAX_ENTITY_SPEED)
                 while True:
                     engine.tick()
                     self.visualizer.start(engine)

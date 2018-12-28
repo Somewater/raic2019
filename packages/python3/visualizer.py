@@ -32,13 +32,13 @@ class Visualizer:
         self.arena.add_child(self.ball)
         meshes.append(self.ball)
 
-        for robot in engine.robot_entities:
+        for robot in engine.get_robots():
             robot_mesh = obj_reader.get_mesh("Sphere")
-            if robot.is_teammate:
+            if robot.get_is_teammate():
                 robot_mesh.textures.append(rc.Texture.from_image(os.path.join(self.root, 'localrunner/assets/robot/green/texture.png')))
             else:
                 robot_mesh.textures.append(rc.Texture.from_image(os.path.join(self.root, 'localrunner/assets/robot/orange/texture.png')))
-            self.robot_by_id[robot.id] = robot_mesh
+            self.robot_by_id[robot.get_id()] = robot_mesh
             self.arena.add_child(robot_mesh)
             meshes.append(robot_mesh)
 
@@ -83,11 +83,11 @@ class Visualizer:
 
     def update_positions(self, engine: Engine):
         global delta
-        ball_pos =  engine.ball_entity.position
+        ball_pos =  engine.get_ball().get_entity().get_position()
         self.ball.position.xyz = ball_pos.get_x(), ball_pos.get_y() + delta, ball_pos.get_z()
-        for robot in engine.robot_entities:
-            robot_pos = robot.position
-            self.robot_by_id[robot.id].position.xyz = robot_pos.get_x(), robot_pos.get_y() + delta, robot_pos.get_z()
+        for robot in engine.get_robots():
+            robot_pos = robot.get_entity().get_position()
+            self.robot_by_id[robot.get_id()].position.xyz = robot_pos.get_x(), robot_pos.get_y() + delta, robot_pos.get_z()
 
     def start(self, engine: Engine):
         if not self.started:
