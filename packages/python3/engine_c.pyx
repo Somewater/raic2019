@@ -198,20 +198,20 @@ cdef collide_entities(RulesStruct rules,
     cdef Vector3D delta_position, normal, impulse
     cdef float distance, penetration, k_a, k_b
 
-    delta_position = b.position - a.position
+    delta_position = b.position.sub(a.position)
     distance = delta_position.len()
     penetration = a.radius + b.radius - distance
     if penetration > 0:
         k_a = (1 / a.mass) / ((1 / a.mass) + (1 / b.mass))
         k_b = (1 / b.mass) / ((1 / a.mass) + (1 / b.mass))
         normal = delta_position.normalize()
-        a.position -= normal * penetration * k_a
-        b.position += normal * penetration * k_b
-        delta_velocity = normal.dot(b.velocity - a.velocity) + b.radius_change_speed - a.radius_change_speed
+        a.position = a.position.sub(normal.mul(penetration * k_a))
+        b.position = b.position.sub(normal.mul(penetration * k_b))
+        delta_velocity = normal.dot(b.velocity.sub(a.velocity)) + b.radius_change_speed - a.radius_change_speed
         if delta_velocity < 0:
-            impulse = normal * (1 + collide_entities__random(rules.MIN_HIT_E, rules.MAX_HIT_E)) * delta_velocity
-            a.velocity += impulse * k_a
-            b.velocity -= impulse * k_b
+            impulse = normal.mul((1 + collide_entities__random(rules.MIN_HIT_E, rules.MAX_HIT_E)) * delta_velocity)
+            a.velocity = a.velocity.add(impulse.mul(k_a))
+            b.velocity = a.velocity.sub(impulse.mul(k_b))
 
 cdef Vector3D collide_with_arena(RulesStruct rules, Entity e):
     cdef Dan dan
@@ -220,20 +220,20 @@ cdef Vector3D collide_with_arena(RulesStruct rules, Entity e):
     dan = dan_to_arena(rules.arena, e.position)
     penetration = e.radius - dan.distance
     if penetration > 0:
-        e.position += dan.normal * penetration
+        e.position = e.position.add(dan.normal.mul(penetration))
         velocity = e.velocity.dot(dan.normal) - e.radius_change_speed
         if velocity < 0:
             if isinstance(e, RobotEntity):
                 arena_e = rules.ROBOT_ARENA_E
             else:
                 arena_e = rules.BALL_ARENA_E
-            e.velocity -= dan.normal * (1 + arena_e) * velocity
+            e.velocity = e.velocity.sub(dan.normal.mul((1 + arena_e) * velocity))
             return dan.normal
     return None
 
 cdef move(RulesStruct rules, Entity e, float delta_time):
     e.velocity = clamp_vector(e.velocity, rules.MAX_ENTITY_SPEED)
-    e.position += e.velocity * delta_time
+    e.position = e.position.add(e.velocity.mul(delta_time))
     e.position.y -= rules.GRAVITY * delta_time * delta_time / 2
     e.velocity.y -= rules.GRAVITY * delta_time
 
@@ -252,17 +252,17 @@ cdef update(RulesStruct rules,
         target_velocity = Vector3D(robot.action.target_velocity_x, robot.action.target_velocity_y, robot.action.target_velocity_z)
         if robot.touch:
             target_velocity = target_velocity.min(rules.ROBOT_MAX_GROUND_SPEED)
-            target_velocity -= robot.touch_normal * robot.touch_normal.dot(target_velocity)
-            target_velocity_change = target_velocity - robot.entity.velocity
+            target_velocity = target_velocity.sub(robot.touch_normal.mul(robot.touch_normal.dot(target_velocity)))
+            target_velocity_change = target_velocity.sub(robot.entity.velocity)
             if target_velocity_change.len() > 0:
                 acceleration = rules.ROBOT_ACCELERATION * max(0, robot.touch_normal.y)
-                robot.entity.velocity += (target_velocity_change.normalize() * acceleration * delta_time).min(target_velocity_change.len())
+                robot.entity.velocity = robot.entity.velocity.add((target_velocity_change.normalize().mul(acceleration * delta_time)).min(target_velocity_change.len()))
         if robot.action.use_nitro:
-            target_velocity_change = (target_velocity - robot.entity.velocity).min(robot.nitro_amount * rules.NITRO_POINT_VELOCITY_CHANGE)
+            target_velocity_change = (target_velocity.sub(robot.entity.velocity)).min(robot.nitro_amount * rules.NITRO_POINT_VELOCITY_CHANGE)
             if target_velocity_change.len() > 0:
-                acceleration = target_velocity_change.normalize() * rules.ROBOT_NITRO_ACCELERATION
-                velocity_change = (acceleration * delta_time).min(target_velocity_change.len())
-                robot.entity.velocity += velocity_change
+                acceleration = target_velocity_change.normalize().mul(rules.ROBOT_NITRO_ACCELERATION)
+                velocity_change = (acceleration.mul(delta_time)).min(target_velocity_change.len())
+                robot.entity.velocity = robot.entity.velocity.add(velocity_change)
                 robot.nitro_amount -= velocity_change.len() / rules.NITRO_POINT_VELOCITY_CHANGE
 
         move(rules, robot.entity, delta_time)

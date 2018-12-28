@@ -47,11 +47,11 @@ cdef Dan dan_to_arena_quarter(ArenaStruct arena, Vector3D point):
             Vector3D(0, 0, -1)))
 
     # Side z
-    v = Vector3D(point.x, point.y, 0) - \
+    v = Vector3D(point.x, point.y, 0).sub(
         Vector3D(
             (arena.goal_width / 2) - arena.goal_top_radius,
             arena.goal_height - arena.goal_top_radius,
-            0)
+            0))
     if point.x >= (arena.goal_width / 2) + arena.goal_side_radius \
             or point.y >= arena.goal_height + arena.goal_side_radius \
             or (v.x > 0 and v.y > 0 and v.len() >= arena.goal_top_radius + arena.goal_side_radius):
@@ -127,7 +127,7 @@ cdef Dan dan_to_arena_quarter(ArenaStruct arena, Vector3D point):
             0)
         v = point.sub(o)
         if v.x > 0 and v.y > 0:
-            o = o.add(v.normalize() * (arena.goal_top_radius + arena.goal_side_radius))
+            o = o.add(v.normalize().mul((arena.goal_top_radius + arena.goal_side_radius)))
             dan = min_dan(dan, dan_to_sphere_outer(
                     point,
                     Vector3D(o.x, o.y, (arena.depth / 2) + arena.goal_side_radius),
@@ -195,7 +195,7 @@ cdef Dan dan_to_arena_quarter(ArenaStruct arena, Vector3D point):
             (arena.goal_width / 2) + arena.goal_side_radius,
             (arena.depth / 2) + arena.goal_side_radius,
             0)
-        v = Vector3D(point.x, point.z, 0) - o
+        v = Vector3D(point.x, point.z, 0).sub(o)
         if v.x < 0 and v.y < 0 \
                 and v.len() < arena.goal_side_radius + arena.bottom_radius:
             o = o.add(v.normalize() * (arena.goal_side_radius + arena.bottom_radius))
@@ -222,7 +222,7 @@ cdef Dan dan_to_arena_quarter(ArenaStruct arena, Vector3D point):
                 (arena.depth / 2) - arena.corner_radius,
                 0
             )
-            n = Vector3D(point.x, point.z, 0) - corner_o
+            n = Vector3D(point.x, point.z, 0).sub(corner_o)
             dist = n.len()
             if dist > arena.corner_radius - arena.bottom_radius:
                 n = n.mul(1/dist)
@@ -263,7 +263,7 @@ cdef Dan dan_to_arena_quarter(ArenaStruct arena, Vector3D point):
                 (arena.depth / 2) - arena.corner_radius,
                 0
             )
-            dv = Vector3D(point.x, point.z, 0) - corner_o
+            dv = Vector3D(point.x, point.z, 0).sub(corner_o)
             if dv.len() > arena.corner_radius - arena.top_radius:
                 n = dv.normalize()
                 o2 = corner_o.add(n * (arena.corner_radius - arena.top_radius))

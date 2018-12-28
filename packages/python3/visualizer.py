@@ -97,7 +97,7 @@ class Visualizer:
 
             @window.event
             def on_draw():
-                with rc.default_shader:
+                with rc.resources.default_shader:
                     self.scene.draw()
 
             @window.event
