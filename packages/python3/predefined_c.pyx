@@ -17,13 +17,13 @@ cdef Dan min_dan(Dan v1, Dan v2):
         return v2
 
 cdef Dan dan_to_plane(Vector3D point, Vector3D point_on_plane, Vector3D plane_normal):
-    return Dan((point - point_on_plane).dot(plane_normal), plane_normal)
+    return Dan((point.sub(point_on_plane)).dot(plane_normal), plane_normal)
 
 cdef dan_to_sphere_inner(Vector3D point, Vector3D sphere_center, float sphere_radius):
-    return Dan(sphere_radius - (point - sphere_center).len(), (sphere_center - point).normalize())
+    return Dan(sphere_radius - (point.sub(sphere_center)).len(), (sphere_center.sub(point)).normalize())
 
 cdef Dan dan_to_sphere_outer(Vector3D point, Vector3D sphere_center, float sphere_radius):
-    return Dan((point - sphere_center).len() - sphere_radius, (point - sphere_center).normalize())
+    return Dan((point.sub(sphere_center)).len() - sphere_radius, (point.sub(sphere_center)).normalize())
 
 cdef float clamp_float(float value, float minumum, float maximum):
     return max(min(value, maximum), minumum)
@@ -125,9 +125,9 @@ cdef Dan dan_to_arena_quarter(ArenaStruct arena, Vector3D point):
             (arena.goal_width / 2) - arena.goal_top_radius,
             arena.goal_height - arena.goal_top_radius,
             0)
-        v = point - o
+        v = point.sub(o)
         if v.x > 0 and v.y > 0:
-            o = o + v.normalize() * (arena.goal_top_radius + arena.goal_side_radius)
+            o = o.add(v.normalize() * (arena.goal_top_radius + arena.goal_side_radius))
             dan = min_dan(dan, dan_to_sphere_outer(
                     point,
                     Vector3D(o.x, o.y, (arena.depth / 2) + arena.goal_side_radius),
@@ -198,7 +198,7 @@ cdef Dan dan_to_arena_quarter(ArenaStruct arena, Vector3D point):
         v = Vector3D(point.x, point.z, 0) - o
         if v.x < 0 and v.y < 0 \
                 and v.len() < arena.goal_side_radius + arena.bottom_radius:
-            o = o + v.normalize() * (arena.goal_side_radius + arena.bottom_radius)
+            o = o.add(v.normalize() * (arena.goal_side_radius + arena.bottom_radius))
             dan = min_dan(dan, dan_to_sphere_inner(
                     point,
                     Vector3D(o.x, arena.bottom_radius, o.y),
@@ -225,8 +225,8 @@ cdef Dan dan_to_arena_quarter(ArenaStruct arena, Vector3D point):
             n = Vector3D(point.x, point.z, 0) - corner_o
             dist = n.len()
             if dist > arena.corner_radius - arena.bottom_radius:
-                n = n * (1/dist)
-                o2 = corner_o + n * (arena.corner_radius - arena.bottom_radius)
+                n = n.mul(1/dist)
+                o2 = corner_o.add(n * (arena.corner_radius - arena.bottom_radius))
                 dan = min_dan(dan, dan_to_sphere_inner(
                         point,
                         Vector3D(o2.x, arena.bottom_radius, o2.y),
@@ -266,7 +266,7 @@ cdef Dan dan_to_arena_quarter(ArenaStruct arena, Vector3D point):
             dv = Vector3D(point.x, point.z, 0) - corner_o
             if dv.len() > arena.corner_radius - arena.top_radius:
                 n = dv.normalize()
-                o2 = corner_o + n * (arena.corner_radius - arena.top_radius)
+                o2 = corner_o.add(n * (arena.corner_radius - arena.top_radius))
                 dan = min_dan(dan, dan_to_sphere_inner(
                         point,
                         Vector3D(o2.x, arena.height - arena.top_radius, o2.y),
