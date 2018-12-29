@@ -1,10 +1,14 @@
 #include "MyStrategy.h"
+#include "engine.h"
 
 using namespace model;
 
 MyStrategy::MyStrategy() { }
 
 void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Action& action) {
+
+  Engine engine(me, rules, game);
+  engine.simulate();
 
   ball.set(game.ball.x, game.ball.z, game.ball.y);
   ball_v.set(game.ball.velocity_x, game.ball.velocity_z, game.ball.velocity_y);

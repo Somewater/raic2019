@@ -7,6 +7,7 @@
 
 #include "Strategy.h"
 #include "math.h"
+#include "engine.h"
 
 const double EPS = 1e-5;
 
