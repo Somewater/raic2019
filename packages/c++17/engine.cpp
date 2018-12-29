@@ -10,21 +10,21 @@
 #include <vector>
 #include <algorithm>
 
-double collide_entities__random(float x, float y) {
+double collide_entities__random(double x, double y) {
   return min(x, y) + abs(x - y) * 0.5;
 }
 
 void collide_entities(const Rules& rules, Entity& a, Entity& b) {
   Vector3D delta_position = b.position.sub(a.position);
-  float distance = delta_position.len();
-  float penetration = a.radius + b.radius - distance;
+  double distance = delta_position.len();
+  double penetration = a.radius + b.radius - distance;
   if (penetration > 0) {
-    float k_a = (1.0 / a.mass) / ((1.0 / a.mass) + (1.0 / b.mass));
-    float k_b = (1.0 / b.mass) / ((1.0 / a.mass) + (1.0 / b.mass));
+    double k_a = (1.0 / a.mass) / ((1.0 / a.mass) + (1.0 / b.mass));
+    double k_b = (1.0 / b.mass) / ((1.0 / a.mass) + (1.0 / b.mass));
     Vector3D normal = delta_position.normalize();
     a.position = a.position.sub(normal.mul(penetration * k_a));
     b.position = b.position.sub(normal.mul(penetration * k_b));
-    float delta_velocity = normal.dot(b.velocity.sub(a.velocity)) + b.radius_change_speed - a.radius_change_speed;
+    double delta_velocity = normal.dot(b.velocity.sub(a.velocity)) + b.radius_change_speed - a.radius_change_speed;
     if (delta_velocity < 0) {
       Vector3D impulse = normal.mul((1.0 + collide_entities__random(rules.MIN_HIT_E, rules.MAX_HIT_E)) * delta_velocity);
       a.velocity = a.velocity.add(impulse.mul(k_a));
@@ -35,10 +35,10 @@ void collide_entities(const Rules& rules, Entity& a, Entity& b) {
 
 optional<Vector3D> collide_with_arena(const Rules& rules, Entity& e) {
   Dan dan = dan_to_arena(rules.arena, e.position);
-  float penetration = e.radius - dan.distance;
+  double penetration = e.radius - dan.distance;
   if (penetration > 0) {
     e.position = e.position.add(dan.normal.mul(penetration));
-    float velocity = e.velocity.dot(dan.normal) - e.radius_change_speed;
+    double velocity = e.velocity.dot(dan.normal) - e.radius_change_speed;
     if (velocity < 0) {
       e.velocity = e.velocity.sub(dan.normal.mul((1 + e.arena_e) * velocity));
       return dan.normal;
@@ -47,14 +47,14 @@ optional<Vector3D> collide_with_arena(const Rules& rules, Entity& e) {
   return {};
 }
 
-void move_entity(const Rules& rules, Entity& e, const float delta_time) {
+void move_entity(const Rules& rules, Entity& e, const double delta_time) {
   e.velocity = clamp_vector(e.velocity, rules.MAX_ENTITY_SPEED);
   e.position = e.position.add(e.velocity.mul(delta_time));
   e.position.y -= rules.GRAVITY * delta_time * delta_time / 2;
   e.velocity.y -= rules.GRAVITY * delta_time;
 }
 
-void update(const Rules& rules, const float delta_time, vector<RobotEntity>& robots, BallEntity& ball,
+void update(const Rules& rules, const double delta_time, vector<RobotEntity>& robots, BallEntity& ball,
             vector<NitroEntity>& nitros, GameState& game_state) {
   // random.shuffle(robots[:]) // TODO
   for (RobotEntity& robot : robots) {
@@ -65,7 +65,7 @@ void update(const Rules& rules, const float delta_time, vector<RobotEntity>& rob
       target_velocity = target_velocity.sub(robot.touch_normal.mul(robot.touch_normal.dot(target_velocity)));
       Vector3D target_velocity_change = target_velocity.sub(robot.velocity);
       if (target_velocity_change.len() > 0) {
-        float acceleration = rules.ROBOT_ACCELERATION * max(0.0, robot.touch_normal.y);
+        double acceleration = rules.ROBOT_ACCELERATION * max(0.0, robot.touch_normal.y);
         robot.velocity = robot.velocity.add(
             (target_velocity_change.normalize().mul(acceleration * delta_time)).min(target_velocity_change.len()));
       }
@@ -130,7 +130,7 @@ void update(const Rules& rules, const float delta_time, vector<RobotEntity>& rob
 
 void tick(const Rules& rules, vector<RobotEntity>& robots, BallEntity& ball,
           vector<NitroEntity>& nitros, GameState& game_state) {
-  float delta_time = 1.0 / rules.TICKS_PER_SECOND;
+  double delta_time = 1.0 / rules.TICKS_PER_SECOND;
   for (int i = 0; i < rules.MICROTICKS_PER_TICK; ++i) {
     update(rules, delta_time / rules.MICROTICKS_PER_TICK, robots, ball, nitros, game_state);
   }

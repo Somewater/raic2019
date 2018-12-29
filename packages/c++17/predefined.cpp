@@ -32,7 +32,7 @@ Dan dan_to_sphere_outer(Vector3D point, Vector3D sphere_center, double sphere_ra
 }
 
 double clamp_float(double value, double minumum, double maximum) {
-  return max(min(value, maximum), minumum);
+  return fmax(fmin(value, maximum), minumum);
 }
 
 Dan dan_to_arena_quarter(const Arena& arena, Vector3D point) {

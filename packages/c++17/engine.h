@@ -60,13 +60,13 @@ public:
 class RobotEntity : public Entity {
 public:
   RobotEntity(Vector3D position,
-              float radius,
-              float mass,
+              double radius,
+              double mass,
               Vector3D velocity,
-              float radius_change_speed,
+              double radius_change_speed,
               bool touch,
               Vector3D touch_normal,
-              float nitro_amount,
+              double nitro_amount,
               int id,
               bool is_teammate,
               Action action,
@@ -98,7 +98,7 @@ public:
 
   bool touch;
   Vector3D touch_normal;
-  float nitro_amount;
+  double nitro_amount;
   int id;
   bool is_teammate;
   Action action;
@@ -108,10 +108,10 @@ class BallEntity : public Entity {
 public:
   BallEntity(
       Vector3D position,
-      float radius,
-      float mass,
+      double radius,
+      double mass,
       Vector3D velocity,
-      float radius_change_speed,
+      double radius_change_speed,
       double arena_e) : Entity(position, radius, mass, velocity, radius_change_speed) {
     this->arena_e = arena_e;
   }
@@ -131,10 +131,10 @@ class NitroEntity : public Entity {
 public:
   NitroEntity(
       Vector3D position,
-      float radius,
-      float mass,
+      double radius,
+      double mass,
       Vector3D velocity,
-      float radius_change_speed,
+      double radius_change_speed,
       int nitro_amount,
       int respawn_ticks) :
         Entity(position, radius, mass, velocity, radius_change_speed),
@@ -156,15 +156,15 @@ public:
   int respawn_ticks;
 };
 
-double collide_entities__random(float x, float y);
+double collide_entities__random(double x, double y);
 
 void collide_entities(const Rules& rules, Entity& a, Entity& b);
 
 optional<Vector3D> collide_with_arena(const Rules& rules, const Entity& e);
 
-void move_entity(const Rules& rules, Entity& e, const float delta_time);
+void move_entity(const Rules& rules, Entity& e, const double delta_time);
 
-void update(const Rules& rules, const float delta_time, vector<RobotEntity>& robots, BallEntity& ball,
+void update(const Rules& rules, const double delta_time, vector<RobotEntity>& robots, BallEntity& ball,
     vector<NitroEntity>& nitros, GameState& game_state);
 
 void tick(const Rules& rules, vector<RobotEntity>& robots, BallEntity& ball,
