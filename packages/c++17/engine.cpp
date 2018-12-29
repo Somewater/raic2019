@@ -143,3 +143,6 @@ void tick(const Rules& rules, vector<RobotEntity>& robots, BallEntity& ball,
     }
   }
 }
+
+double Engine::ms_sum = 0.0;
+int Engine::ms_count = 0;

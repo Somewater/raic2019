@@ -191,8 +191,14 @@ public:
     steady_clock::time_point start = steady_clock::now();
     tick(rules, robots, ball, nitros, game_state);
     auto duration = steady_clock::now() - start;
-    cout << "Tick: " << duration_cast<nanoseconds>(duration).count() * 0.000001 << " ms" << endl;
+    double ms = duration_cast<nanoseconds>(duration).count() * 0.000001;
+    ms_sum += ms;
+    ms_count++;
+    cout << "Tick: " << ms << " ms, avg: " << (ms_sum / ms_count) << " ms" << endl;
   }
+
+    static double ms_sum;
+    static int ms_count;
 
 private:
   Rules rules;
