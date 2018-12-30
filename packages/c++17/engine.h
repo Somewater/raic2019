@@ -80,7 +80,7 @@ public:
     this->arena_e = arena_e;
   }
 
-  static RobotEntity from_robot(Robot robot, Action action, Rules rules) {
+  static RobotEntity from_robot(const Robot& robot, const Action& action, const Rules& rules) {
     return RobotEntity(
         Vector3D(robot.x, robot.y, robot.z),
         robot.radius,
@@ -116,7 +116,7 @@ public:
     this->arena_e = arena_e;
   }
 
-  static BallEntity from_ball(Ball ball, Rules rules) {
+  static BallEntity from_ball(const Ball& ball, const Rules& rules) {
     return BallEntity(
         Vector3D(ball.x, ball.y, ball.z),
         ball.radius,
@@ -141,7 +141,7 @@ public:
         nitro_amount(nitro_amount),
         respawn_ticks(respawn_ticks){}
 
-  static NitroEntity from_nitro_pack(NitroPack nitro, Rules rules) {
+  static NitroEntity from_nitro_pack(const NitroPack& nitro, const Rules& rules) {
     return NitroEntity(
         Vector3D(nitro.x, nitro.y, nitro.z),
         nitro.radius,

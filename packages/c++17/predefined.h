@@ -11,23 +11,23 @@ using namespace model;
 struct Dan {
   double distance;
   Vector3D normal;
-  Dan(double distance, Vector3D vector) : distance(distance), normal(vector) {}
+  Dan(double distance, const Vector3D& vector) : distance(distance), normal(vector) {}
 };
 
-Vector3D clamp_vector(Vector3D vector, double lenght);
+Vector3D clamp_vector(Vector3D& vector, const double lenght);
 
-Dan min_dan(Dan v1, Dan v2);
+Dan min_dan(const Dan& v1, const Dan& v2);
 
-Dan dan_to_plane(Vector3D point, Vector3D point_on_plane, Vector3D plane_normal);
+Dan dan_to_plane(const Vector3D& point, const Vector3D& point_on_plane, const Vector3D& plane_normal);
 
-Dan dan_to_sphere_inner(Vector3D point, Vector3D sphere_center, double sphere_radius);
+Dan dan_to_sphere_inner(const Vector3D& point, const Vector3D& sphere_center, const double sphere_radius);
 
-Dan dan_to_sphere_outer(Vector3D point, Vector3D sphere_center, double sphere_radius);
+Dan dan_to_sphere_outer(const Vector3D& point, const Vector3D& sphere_center, const double sphere_radius);
 
-double clamp_float(double value, double minumum, double maximum);
+double clamp_float(const double value, const double minumum, const double maximum);
 
-Dan dan_to_arena_quarter(const Arena& arena, Vector3D point);
+Dan dan_to_arena_quarter(const Arena& arena, const Vector3D& point);
 
-Dan dan_to_arena(const Arena& arena, Vector3D point0);
+Dan dan_to_arena(const Arena& arena, const Vector3D& point0);
 
 #endif //MYSTRATEGY_PREDEFINED_H

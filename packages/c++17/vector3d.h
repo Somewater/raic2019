@@ -20,25 +20,25 @@ struct Vector3D {
     return _len;
   }
 
-  double lenTo(double x_, double z_, double y_) { return sqrt((x-x_)*(x-x_) + (y-y_)*(y-y_) + (z-z_)*(z-z_)); }
+  double lenTo(const double x_, const double z_, const double y_) { return sqrt((x-x_)*(x-x_) + (y-y_)*(y-y_) + (z-z_)*(z-z_)); }
 
-  double lenTo(Vector3D p) { return lenTo(p.x, p.z, p.y); }
+  double lenTo(const Vector3D& p) { return lenTo(p.x, p.z, p.y); }
 
   //Vector3D operator+(Vector3D p) { return { x+p.x, z+p.z, y+p.y };}
-  Vector3D add(Vector3D other) { return {x + other.x, y + other.y, z + other.z}; }
-  Vector3D sub(Vector3D other) { return {x - other.x, y - other.y, z - other.z}; }
-  Vector3D mul(double value) { return {x * value, y * value, z * value}; }
+  Vector3D add(const Vector3D& other) const { return {x + other.x, y + other.y, z + other.z}; }
+  Vector3D sub(const Vector3D& other) const { return {x - other.x, y - other.y, z - other.z}; }
+  Vector3D mul(const double value) const { return {x * value, y * value, z * value}; }
 
   //Vector3D operator*(double val) { return { x*val, z*val, y*val }; }
 
   //void operator*=(double val) { x *= val; z *= val; y *= val; }
 
 
-  double dot(Vector3D other) {
+  double dot(const Vector3D& other) const {
     return x * other.x + y * other.y + z * other.z;
   }
 
-  Vector3D min(double value) {
+  Vector3D min(const double value) const {
     return Vector3D((value < x ? value : x),
                     (value < y ? value : y),
                     (value < z ? value : z));
