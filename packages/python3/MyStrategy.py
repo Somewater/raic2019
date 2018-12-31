@@ -71,7 +71,21 @@ class MyStrategy:
             self.visualizer = None
 
     # Код стратегии
+    def check_engine_correctness(self, me: Robot, rules: Rules, game: Game, action: Action):
+        engine = Engine(me, rules, game)
+        self.visualizer.start(engine)
+        for i in range(1000):
+            for r in engine.get_robots():
+                if r.get_is_teammate() and r.get_id() == 1:
+                    print('%d) robot %d position=%s velocity=%s' % (
+                    i, r.get_id(), str(r.get_entity().get_position()), str(r.get_entity().get_velocity())))
+            engine.tick()
+            self.visualizer.start(engine)
+
+    # Код стратегии
     def act(self, me: Robot, rules: Rules, game: Game, action: Action):
+        #check_engine_correctness(me, rules, game, action); return
+
         engine = Engine(me, rules, game)
         engine.tick()
         if self.env.is_local() and game.current_tick > 1 and game.current_tick % 10 == 0:

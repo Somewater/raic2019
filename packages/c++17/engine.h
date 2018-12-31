@@ -194,13 +194,12 @@ public:
     double ms = duration_cast<nanoseconds>(duration).count() * 0.000001;
     ms_sum += ms;
     ms_count++;
-    cout << "Tick: " << ms << " ms, avg: " << (ms_sum / ms_count) << " ms" << endl;
+    // cout << "Tick: " << ms << " ms, avg: " << (ms_sum / ms_count) << " ms" << endl;
   }
 
-    static double ms_sum;
-    static int ms_count;
+  static double ms_sum;
+  static int ms_count;
 
-private:
   Rules rules;
   GameState game_state;
   vector<RobotEntity> robots;

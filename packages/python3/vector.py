@@ -51,3 +51,9 @@ class Vector3D:
     def get_z(self):
         return self.z
 
+    def __str__(self):
+        return '(%f,%f,%f)' % (self.x, self.y, self.z)
+
+    def __repr__(self):
+        return self.__str__()
+

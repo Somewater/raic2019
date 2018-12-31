@@ -378,6 +378,7 @@ cdef class Engine:
         self.robots = []
         for r in game.robots:
             action = Action()
+            # action.target_velocity_x = 100
             self.robots.append(RobotEntity.from_robot(r, action, self.rules))
         self.ball = BallEntity.from_ball(game.ball, self.rules)
         self.nitros = []
@@ -387,7 +388,7 @@ cdef class Engine:
     def tick(self):
         start = time.time()
         tick(self.rules, self.robots, self.ball, self.nitros, self.game_state)
-        print('tick in %.2f ms' % (1000 * (time.time() - start)))
+        # print('tick in %.2f ms' % (1000 * (time.time() - start)))
 
     def get_robots(self):
         return self.robots

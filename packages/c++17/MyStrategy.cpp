@@ -5,10 +5,27 @@ using namespace model;
 
 MyStrategy::MyStrategy() { }
 
-void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Action& action) {
+void check_engine_correctness(const Robot& me, const Rules& rules, const Game& game, Action& action) {
 
   Engine engine(me, rules, game);
-  engine.simulate();
+  for (int i = 0; i < 1000; i++) {
+    for (RobotEntity& r : engine.robots) {
+      if (r.is_teammate and r.id == 1) {
+        cout << i << ") " << "robot " << r.id << " position=" << r.position << " velocity=" << r.velocity << endl;
+      }
+    }
+    engine.simulate();
+  }
+
+//  action.target_velocity_x = 100;
+//  if (me.id == 1) {
+//    cout << game.current_tick << ") " << "robot " << me.id << " position=(" << me.x << "," << me.y << "," << me.z
+//        << ") velocity=(" << me.velocity_x << "," << me.velocity_y << "," << me.velocity_z << ")" << endl;
+//  }
+}
+
+void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Action& action) {
+  // check_engine_correctness(me, rules, game, action); return;
 
   ball.set(game.ball.x, game.ball.z, game.ball.y);
   ball_v.set(game.ball.velocity_x, game.ball.velocity_z, game.ball.velocity_y);

@@ -3,6 +3,9 @@
 #define MYSTRATEGY_VECTOR3D_H
 
 #include "math.h"
+#include <iostream>
+
+using namespace std;
 
 struct Vector3D {
   double x;
@@ -11,18 +14,18 @@ struct Vector3D {
 
   Vector3D() : x(0), y(0), z(0) {}
 
-  Vector3D(double x, double z, double y) : x(x), y(y), z(z) {}
+  Vector3D(double x, double y, double z) : x(x), y(y), z(z) {}
 
-  void set(double x_, double z_, double y_) { x = x_; z = z_; y = y_; }
+  void set(double x_, double y_, double z_) { x = x_; y = y_; z = z_; }
 
   double len() {
     if (_len < 0) _len = sqrt(x*x + y*y + z*z);
     return _len;
   }
 
-  double lenTo(const double x_, const double z_, const double y_) { return sqrt((x-x_)*(x-x_) + (y-y_)*(y-y_) + (z-z_)*(z-z_)); }
+  double lenTo(const double x_, const double y_, const double z_) { return sqrt((x-x_)*(x-x_) + (y-y_)*(y-y_) + (z-z_)*(z-z_)); }
 
-  double lenTo(const Vector3D& p) { return lenTo(p.x, p.z, p.y); }
+  double lenTo(const Vector3D& p) { return lenTo(p.x, p.y, p.z); }
 
   //Vector3D operator+(Vector3D p) { return { x+p.x, z+p.z, y+p.y };}
   Vector3D add(const Vector3D& other) const { return {x + other.x, y + other.y, z + other.z}; }
@@ -56,5 +59,7 @@ struct Vector3D {
 private:
   double _len = -1;
 };
+
+ostream& operator<<(ostream& stream, const Vector3D& vector);
 
 #endif //MYSTRATEGY_VECTOR3D_H

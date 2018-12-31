@@ -3,6 +3,8 @@ from pyglet.window import key, mouse
 import ratcave as rc
 import os
 from engine import Engine
+import socket
+import io
 
 delta = -6.5
 
@@ -123,3 +125,11 @@ class Visualizer:
             # self.move_camera(0)
             for window in pyglet.app.windows:
                 window.dispatch_events()
+
+if __name__ == '__main__':
+        socket = socket.socket()
+        #socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
+        socket.bind(('localhost', 12327))
+        reader = io.BufferedReader(socket.SocketIO(socket, 'r'))
+        for line in reader.readline():
+            print(line)
