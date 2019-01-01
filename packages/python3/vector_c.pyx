@@ -13,20 +13,20 @@ cdef class Vector3D:
     cdef Vector3D sub(self, Vector3D other_sub):
         return Vector3D(self.x - other_sub.x, self.y - other_sub.y, self.z - other_sub.z)
 
-    #def __sub__(self, Vector3D other_sub):
-    #    return Vector3D(self.get_x() - other_sub.get_x(), self.get_y() - other_sub.get_y(), self.get_z() - other_sub.get_z())
+    def __sub__(self, Vector3D other_sub):
+        return Vector3D(self.get_x() - other_sub.get_x(), self.get_y() - other_sub.get_y(), self.get_z() - other_sub.get_z())
 
     cdef Vector3D add(self, Vector3D other_add):
         return Vector3D(self.x + other_add.x, self.y + other_add.y, self.z + other_add.z)
 
-    #def __add__(self, Vector3D other_add):
-    #    return Vector3D(self.get_x() + other_add.get_x(), self.get_y() + other_add.get_y(), self.get_z() + other_add.get_z())
+    def __add__(self, Vector3D other_add):
+        return Vector3D(self.get_x() + other_add.get_x(), self.get_y() + other_add.get_y(), self.get_z() + other_add.get_z())
 
     cdef Vector3D mul(self, float num_mul):
         return Vector3D(self.x * num_mul, self.y * num_mul, self.z * num_mul)
 
-    #def __mul__(self, float other_mul):
-    #    return Vector3D(self.get_x() * other_mul, self.get_y() * other_mul, self.get_z() * other_mul)
+    def __mul__(self, float other_mul):
+        return Vector3D(self.get_x() * other_mul, self.get_y() * other_mul, self.get_z() * other_mul)
 
     cpdef Vector3D normalize(self):
         if self.len() == 0:
