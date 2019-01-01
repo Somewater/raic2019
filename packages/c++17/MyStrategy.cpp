@@ -7,7 +7,7 @@ MyStrategy::MyStrategy() { }
 
 void check_engine_correctness(const Robot& me, const Rules& rules, const Game& game, Action& action) {
 
-  Engine engine(me, rules, game);
+  Engine engine(me.id, rules, game);
   for (int i = 0; i < 1000; i++) {
     for (RobotEntity& r : engine.robots) {
       if (r.is_teammate and r.id == 1) {

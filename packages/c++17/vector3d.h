@@ -28,9 +28,9 @@ struct Vector3D {
   double lenTo(const Vector3D& p) { return lenTo(p.x, p.y, p.z); }
 
   //Vector3D operator+(Vector3D p) { return { x+p.x, z+p.z, y+p.y };}
-  Vector3D add(const Vector3D& other) const { return {x + other.x, y + other.y, z + other.z}; }
-  Vector3D sub(const Vector3D& other) const { return {x - other.x, y - other.y, z - other.z}; }
-  Vector3D mul(const double value) const { return {x * value, y * value, z * value}; }
+  Vector3D add(const Vector3D& other) const { return Vector3D(x + other.x, y + other.y, z + other.z); }
+  Vector3D sub(const Vector3D& other) const { return Vector3D(x - other.x, y - other.y, z - other.z); }
+  Vector3D mul(const double value) const { return Vector3D(x * value, y * value, z * value); }
 
   //Vector3D operator*(double val) { return { x*val, z*val, y*val }; }
 

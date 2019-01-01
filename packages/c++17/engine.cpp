@@ -33,7 +33,7 @@ void collide_entities(const Rules& rules, Entity& a, Entity& b) {
   }
 }
 
-optional<Vector3D> collide_with_arena(const Rules& rules, Entity& e) {
+pair<bool, Vector3D> collide_with_arena(const Rules& rules, Entity& e) {
   Dan dan = dan_to_arena(rules.arena, e.position);
   double penetration = e.radius - dan.distance;
   if (penetration > 0) {
@@ -41,10 +41,10 @@ optional<Vector3D> collide_with_arena(const Rules& rules, Entity& e) {
     double velocity = e.velocity.dot(dan.normal) - e.radius_change_speed;
     if (velocity < 0) {
       e.velocity = e.velocity.sub(dan.normal.mul((1 + e.arena_e) * velocity));
-      return dan.normal;
+      return make_pair(true, dan.normal);
     }
   }
-  return {};
+  return make_pair(false, dan.normal);
 }
 
 void move_entity(const Rules& rules, Entity& e, const double delta_time) {
@@ -97,10 +97,10 @@ void update(const Rules& rules, const double delta_time, vector<RobotEntity>& ro
 
   for (RobotEntity& robot : robots) {
     collide_entities(rules, robot, ball);
-    optional<Vector3D> collision_normal = collide_with_arena(rules, robot);
-    if (collision_normal.has_value()) {
+    pair<bool, Vector3D> collision_normal = collide_with_arena(rules, robot);
+    if (collision_normal.first) {
       robot.touch = true;
-      robot.touch_normal = collision_normal.value();
+      robot.touch_normal = collision_normal.second;
     } else {
       robot.touch = false;
     }

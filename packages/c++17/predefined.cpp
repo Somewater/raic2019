@@ -20,7 +20,7 @@ Dan min_dan(const Dan& v1, const Dan& v2) {
 }
 
 Dan dan_to_plane(const Vector3D& point, const Vector3D& point_on_plane, const Vector3D& plane_normal) {
-  return {(point.sub(point_on_plane)).dot(plane_normal), plane_normal};
+  return Dan((point.sub(point_on_plane)).dot(plane_normal), plane_normal);
 }
 
 Dan dan_to_sphere_inner(const Vector3D& point, const Vector3D& sphere_center, const double sphere_radius) {

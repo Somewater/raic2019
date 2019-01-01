@@ -23,15 +23,15 @@ struct GameState {
   int enemy_score = 0;
 
   static GameState from_game(const Game& game) {
-    int my_score, enemy_score;
+    GameState g;
     for (auto& player : game.players) {
       if (player.me) {
-        my_score = player.score;
+        g.my_score = player.score;
       } else {
-        enemy_score = player.score;
+        g.enemy_score = player.score;
       }
     }
-    return {my_score, enemy_score};
+    return g;
   }
 };
 
@@ -160,7 +160,7 @@ double collide_entities__random(double x, double y);
 
 void collide_entities(const Rules& rules, Entity& a, Entity& b);
 
-optional<Vector3D> collide_with_arena(const Rules& rules, const Entity& e);
+pair<bool, Vector3D> collide_with_arena(const Rules& rules, const Entity& e);
 
 void move_entity(const Rules& rules, Entity& e, const double delta_time);
 
@@ -172,7 +172,7 @@ void tick(const Rules& rules, vector<RobotEntity>& robots, BallEntity& ball,
 
 class Engine {
 public:
-  Engine(const Robot& me, const Rules& rules, const Game& game) :
+  Engine(const int me, const Rules& rules, const Game& game) :
   rules(rules),
   ball( BallEntity::from_ball(game.ball, rules)) {
     game_state = GameState::from_game(game);

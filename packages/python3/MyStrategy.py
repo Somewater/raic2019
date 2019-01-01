@@ -2,7 +2,7 @@ from model.action import Action
 from model.game import Game
 from model.robot import Robot
 from model.rules import Rules
-from engine_c import Engine
+from engine_cc import PyEngine
 from visualizer import Visualizer
 from enum import Enum
 import os
@@ -86,7 +86,7 @@ class MyStrategy:
     def act(self, me: Robot, rules: Rules, game: Game, action: Action):
         #check_engine_correctness(me, rules, game, action); return
 
-        engine = Engine(me, rules, game)
+        engine = PyEngine(me.id, rules, game)
         engine.tick()
         if self.env.is_local() and game.current_tick > 1 and game.current_tick % 10 == 0:
             self.visualizer.start(engine)
