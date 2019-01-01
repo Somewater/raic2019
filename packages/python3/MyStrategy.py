@@ -2,7 +2,7 @@ from model.action import Action
 from model.game import Game
 from model.robot import Robot
 from model.rules import Rules
-from engine_cc import PyEngine
+from engine_cpp import PyEngine
 from visualizer import Visualizer
 from enum import Enum
 import os
@@ -79,7 +79,7 @@ class MyStrategy:
                 if r.get_is_teammate() and r.get_id() == 1:
                     print('%d) robot %d position=%s velocity=%s' % (
                     i, r.get_id(), str(r.get_entity().get_position()), str(r.get_entity().get_velocity())))
-            engine.tick()
+            engine.simulate()
             self.visualizer.start(engine)
 
     # Код стратегии
@@ -87,7 +87,7 @@ class MyStrategy:
         #check_engine_correctness(me, rules, game, action); return
 
         engine = PyEngine(me.id, rules, game)
-        engine.tick()
+        engine.simulate()
         if self.env.is_local() and game.current_tick > 1 and game.current_tick % 10 == 0:
             self.visualizer.start(engine)
             if game.current_tick > 1000000000:
@@ -96,7 +96,7 @@ class MyStrategy:
                 engine.get_ball().get_entity().get_velocity().set_y(0)
                 engine.get_ball().get_entity().get_velocity().set_z(rules.MAX_ENTITY_SPEED)
                 while True:
-                    engine.tick()
+                    engine.simulate()
                     self.visualizer.start(engine)
 
         # Наша стратегия умеет играть только на земле

@@ -20,7 +20,7 @@ if __name__ == '__main__':
             break
 
     visualizer = Visualizer(project_root)
-    engine = PyEngine(me.id, game, rules)
+    engine = PyEngine(me.id, rules, game)
     visualizer.start(engine)
     for i in range(1000000):
         engine.simulate()

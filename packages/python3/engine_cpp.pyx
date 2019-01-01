@@ -192,7 +192,7 @@ class _Ball(EntityHolder):
 
 cdef class PyEngine:
     cdef Engine* engine;
-    def __cinit__(self, int id, game, rules):
+    def __cinit__(self, int id, rules, game):
         cdef Robot robot_c
         cdef Player player_c
         cdef NitroPack nitro_c
@@ -212,9 +212,14 @@ cdef class PyEngine:
             robot_c.radius = robot.radius
             robot_c.nitro_amount = robot.nitro_amount
             robot_c.touch = robot.touch
-            robot_c.touch_normal_x = robot.touch_normal_x
-            robot_c.touch_normal_y = robot.touch_normal_y
-            robot_c.touch_normal_z = robot.touch_normal_z
+            if robot_c.touch:
+                robot_c.touch_normal_x = robot.touch_normal_x
+                robot_c.touch_normal_y = robot.touch_normal_y
+                robot_c.touch_normal_z = robot.touch_normal_z
+            else:
+                robot_c.touch_normal_x = 0
+                robot_c.touch_normal_y = 0
+                robot_c.touch_normal_z = 0
             game_c.robots.push_back(robot_c)
 
         for player in game.players:
