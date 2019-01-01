@@ -90,11 +90,11 @@ class MyStrategy:
         engine.simulate()
         if self.env.is_local() and game.current_tick > 1 and game.current_tick % 10 == 0:
             self.visualizer.start(engine)
-            if game.current_tick > 1000000000:
+            if game.current_tick > 100:
                 print('EVALUATION')
-                engine.get_ball().get_entity().get_velocity().set_x(0)
-                engine.get_ball().get_entity().get_velocity().set_y(0)
-                engine.get_ball().get_entity().get_velocity().set_z(rules.MAX_ENTITY_SPEED)
+                #engine.get_ball().get_entity().get_velocity().set_x(0)
+                #engine.get_ball().get_entity().get_velocity().set_y(0)
+                #engine.get_ball().get_entity().get_velocity().set_z(rules.MAX_ENTITY_SPEED)
                 while True:
                     engine.simulate()
                     self.visualizer.start(engine)
