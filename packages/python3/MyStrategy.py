@@ -6,6 +6,7 @@ from engine_cpp import PyEngine
 from visualizer import Visualizer
 from enum import Enum
 import os
+import pprint
 
 EPS = 1e-5
 # Константы, взятые из документации
@@ -72,7 +73,7 @@ class MyStrategy:
 
     # Код стратегии
     def check_engine_correctness(self, me: Robot, rules: Rules, game: Game, action: Action):
-        engine = Engine(me, rules, game)
+        engine = PyEngine(me.id, rules, game)
         self.visualizer.start(engine)
         for i in range(1000):
             for r in engine.get_robots():
@@ -85,19 +86,28 @@ class MyStrategy:
     # Код стратегии
     def act(self, me: Robot, rules: Rules, game: Game, action: Action):
         #check_engine_correctness(me, rules, game, action); return
-
-        engine = PyEngine(me.id, rules, game)
-        engine.simulate()
         if self.env.is_local() and game.current_tick > 1 and game.current_tick % 10 == 0:
+            engine = PyEngine(me.id, rules, game)
             self.visualizer.start(engine)
             if game.current_tick > 100:
                 print('EVALUATION')
                 #engine.get_ball().get_entity().get_velocity().set_x(0)
                 #engine.get_ball().get_entity().get_velocity().set_y(0)
                 #engine.get_ball().get_entity().get_velocity().set_z(rules.MAX_ENTITY_SPEED)
+                for r in game.robots:
+                    if r.is_teammate:
+                        for k, v in r.__dict__.items():
+                            print(r.id, ': ', k, v)
+                        print()
+                for r in engine.get_robots():
+                    if r.get_is_teammate():
+                        print(r, end='\n\n')
                 while True:
                     engine.simulate()
                     self.visualizer.start(engine)
+                    for r in engine.get_robots():
+                        if r.get_is_teammate():
+                            print(r, end='\n\n')
 
         # Наша стратегия умеет играть только на земле
         # Поэтому, если мы не касаемся земли, будет использовать нитро

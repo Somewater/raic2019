@@ -24,8 +24,22 @@ void check_engine_correctness(const Robot& me, const Rules& rules, const Game& g
 //  }
 }
 
+void print_r1_r2_positions(const Robot& me, const Rules& rules, const Game& game, Action& action) {
+  Engine engine(me.id, rules, game);
+  while (true) {
+    engine.simulate();
+    for (RobotEntity& r : engine.robots) {
+      if (r.id == 2) cout << "R_" << r.id << "(position=" << r.position << ", velocity=" << r.velocity << ")\n" << endl;
+    }
+    for (RobotEntity& r : engine.robots) {
+      if (r.id == 1) cout << "R_" << r.id << "(position=" << r.position << ", velocity=" << r.velocity << ")\n" << endl;
+    }
+  }
+}
+
 void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Action& action) {
-  // check_engine_correctness(me, rules, game, action); return;
+  //if (game.current_tick > 100) check_engine_correctness(me, rules, game, action); return;
+  //if (game.current_tick > 100) print_r1_r2_positions(me, rules, game, action);
 
   ball.set(game.ball.x, game.ball.z, game.ball.y);
   ball_v.set(game.ball.velocity_x, game.ball.velocity_z, game.ball.velocity_y);

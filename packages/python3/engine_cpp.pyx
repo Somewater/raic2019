@@ -161,6 +161,12 @@ class _Vec:
     def get_y(self): return self.y
     def get_z(self): return self.z
 
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return '(%f, %f, %f)' % (self.x, self.y, self.z)
+
 class EntityHolder:
     def __init__(self, position, velocity):
         self.position = position
@@ -186,6 +192,12 @@ class _Robot(EntityHolder):
 
     def get_id(self):
         return self.id
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return 'R_%d(position=%s, velocity=%s)' % (self.id, self.position, self.velocity)
 
 class _Ball(EntityHolder):
     pass
