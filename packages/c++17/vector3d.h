@@ -23,9 +23,9 @@ struct Vector3D {
     return _len;
   }
 
-  double lenTo(const double x_, const double y_, const double z_) { return sqrt((x-x_)*(x-x_) + (y-y_)*(y-y_) + (z-z_)*(z-z_)); }
+  double distance_to(const double x_, const double y_, const double z_) const { return sqrt((x-x_)*(x-x_) + (y-y_)*(y-y_) + (z-z_)*(z-z_)); }
 
-  double lenTo(const Vector3D& p) { return lenTo(p.x, p.y, p.z); }
+  double distance_to(const Vector3D& p) const { return distance_to(p.x, p.y, p.z); }
 
   //Vector3D operator+(Vector3D p) { return { x+p.x, z+p.z, y+p.y };}
   Vector3D add(const Vector3D& other) const { return Vector3D(x + other.x, y + other.y, z + other.z); }

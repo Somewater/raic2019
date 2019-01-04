@@ -10,6 +10,8 @@
 #include <optional>
 #include <chrono>
 #include <iostream>
+#include <random>
+#include "ofxMSAmcts.h"
 
 #ifndef MYSTRATEGY_ENGINE_H
 #define MYSTRATEGY_ENGINE_H
@@ -17,10 +19,15 @@
 using namespace model;
 using namespace std;
 using namespace chrono;
+using namespace msa::mcts;
+
+static std::random_device rd2;
+static std::mt19937 g2(rd2());
 
 struct GameState {
-  int my_score = 0;
-  int enemy_score = 0;
+  int my_score;
+  int enemy_score;
+  int current_tick;
 
   static GameState from_game(const Game& game) {
     GameState g;
@@ -31,6 +38,7 @@ struct GameState {
         g.enemy_score = player.score;
       }
     }
+    g.current_tick = game.current_tick;
     return g;
   }
 };
@@ -168,43 +176,235 @@ void update(const Rules& rules, const double delta_time, vector<RobotEntity>& ro
     vector<NitroEntity>& nitros, GameState& game_state);
 
 void tick(const Rules& rules, vector<RobotEntity>& robots, BallEntity& ball,
-    vector<NitroEntity>& nitros, GameState& game_state);
+    vector<NitroEntity>& nitros, GameState& game_state,double delta_time,bool microticks);
 
-class Engine {
+class State {
 public:
-  Engine(const int me, const Rules& rules, const Game& game) :
+  State(const int me, const Rules& rules, const Game& game) :
   rules(rules),
   ball( BallEntity::from_ball(game.ball, rules)) {
     game_state = GameState::from_game(game);
     robots.reserve(game.robots.size());
     for (auto& robot : game.robots) {
       Action action;
+      action.target_velocity_x = robot.velocity_x;
+      action.target_velocity_y = robot.velocity_y;
+      action.target_velocity_z = robot.velocity_z;
+      action.jump_speed = rules.ROBOT_MAX_JUMP_SPEED * (robot.radius - rules.ROBOT_MIN_RADIUS) / (rules.ROBOT_MAX_RADIUS - rules.ROBOT_MIN_RADIUS);
+      action.use_nitro = false;
       robots.push_back(RobotEntity::from_robot(robot, action, rules));
     }
+    sort(robots.begin(), robots.end(), [](const RobotEntity& a, const RobotEntity& b) { return a.id < b.id; });
     nitros.reserve(game.nitro_packs.size());
     for (auto& nitro : game.nitro_packs) {
       nitros.push_back(NitroEntity::from_nitro_pack(nitro, rules));
     }
   }
 
-  void simulate() {
-    steady_clock::time_point start = steady_clock::now();
-    tick(rules, robots, ball, nitros, game_state);
-    auto duration = steady_clock::now() - start;
-    double ms = duration_cast<nanoseconds>(duration).count() * 0.000001;
-    ms_sum += ms;
-    ms_count++;
+  void simulate(double dt = 0.0, bool microticks = true) {
+    // steady_clock::time_point start = steady_clock::now();
+    if (dt == 0.0) {
+      dt = 1.0 / rules.TICKS_PER_SECOND;
+    }
+    tick(rules, robots, ball, nitros, game_state, dt, microticks);
+    // auto duration = steady_clock::now() - start;
+    // double ms = duration_cast<nanoseconds>(duration).count() * 0.000001;
+    // ms_sum += ms;
+    // ms_count++;
     // cout << "Tick: " << ms << " ms, avg: " << (ms_sum / ms_count) << " ms" << endl;
+  }
+
+  double my_score() const {
+    bool win = false;
+    bool lose = false;
+    double score = 0.0;
+    for (int  i = 1; i < 10; ++i) {
+      double t = i * 1.0;
+      Vector3D ball_pos = ball.position.add(ball.velocity.mul(t));
+      if (abs(ball_pos.z) > rules.arena.depth * 0.5 + ball.radius && abs(ball.position.x) < rules.arena.goal_width * 0.5) {
+        if (ball_pos.z > 0) {
+          win = true;
+          score += 1000000.0 / i;
+        } else {
+          lose = true;
+          score -= 1000000.0 / i;
+        }
+        break;
+      }
+    }
+    double ball_my_distance = 1000000;
+    double ball_enemy_distance = 1000000;
+    for (const RobotEntity& e : robots) {
+      double dist = e.position.distance_to(ball.position);
+      if (e.is_teammate) {
+        if (ball_my_distance > dist) ball_my_distance = dist;
+      } else {
+        if (ball_enemy_distance > dist) ball_enemy_distance = dist;
+      }
+    }
+    score -= ball_my_distance * 0.01;
+    score += ball_enemy_distance * 0.01;
+    score += ball.position.z * 100;
+    score += ball.velocity.z * 10;
+    return score;
+  }
+
+  bool is_terminal() const {
+    return abs(ball.position.z) > rules.arena.depth * 0.5 + ball.radius;
+  }
+
+  State (const State &other) : rules(other.rules),
+                               game_state(other.game_state),
+                               robots(other.robots),
+                               ball(other.ball),
+                               nitros(other.nitros) {}
+
+  State& operator=(const State& other) {
+    //this->rules = other.rules;
+    this->game_state = other.game_state;
+    this->robots = other.robots;
+    this->ball = other.ball;
+    this->nitros = other.nitros;
+    return *this;
   }
 
   static double ms_sum;
   static int ms_count;
 
-  Rules rules;
+  const Rules& rules;
   GameState game_state;
   vector<RobotEntity> robots;
   BallEntity ball;
   vector<NitroEntity> nitros;
+};
+
+struct StateEntry {
+    State state;
+    int id;
+    bool is_teammate;
+    Action action;
+    StateEntry* prev;
+
+    double my_score() const {
+      return state.my_score();
+    }
+};
+
+class McState {
+public:
+    McState(StateEntry e, int initial_id) : state(e.state), id(e.id), is_teammate(e.is_teammate), action(e.action), initial_id(initial_id) {
+
+    }
+
+    void apply_action(const Action& action) {
+      state.robots[id - 1].action = action;
+      int new_id = (id % state.robots.size()) + 1;
+      if (new_id == initial_id) {
+        state.simulate(0, false);
+      }
+      id = new_id;
+      for (const RobotEntity& e : state.robots) {
+        if (e.id == id) {
+          is_teammate = e.is_teammate;
+          break;
+        }
+      }
+    }
+
+    StateEntry to_state_entry() {
+      return StateEntry { state, id, is_teammate, action, nullptr };
+    }
+
+    bool is_terminal() const {
+      return state.is_terminal();
+    }
+
+    bool get_random_action(Action& action) const {
+      throw runtime_error("Not implemented");
+    }
+
+    const std::vector<float> evaluate() const {
+      float score = (float) state.my_score();
+      return {0, score, -score};
+    }
+
+    int agent_id() const {
+      return (is_teammate ? 1 : 2);
+    }
+
+    void get_actions(std::vector<Action>& actions) const  {
+      actions.clear();
+      for (int x = -100; x <= 100; x += 50) {
+        for (int z = -100; z <= 100; z += 50) {
+          Action a;
+          a.target_velocity_x = x;
+          a.target_velocity_z = z;
+          actions.push_back(a);
+        }
+      }
+    }
+
+    State state;
+    int id;
+    bool is_teammate;
+    Action action;
+    int initial_id;
+};
+
+/**
+ * MTD(f)
+ * SSS*
+ * NegaScout
+ */
+class Engine {
+public:
+  Engine(const Robot& me, const Rules& rules, const Game& game) :
+  current{State(me.id, rules, game), me.id, me.is_teammate, Action(), NULL} {}
+
+  Action find_best() {
+    return monte_carlo();
+  }
+
+private:
+    Action monte_carlo() {
+      McState state(current, current.id);
+      UCT<McState, Action> uct;
+
+      uct.uct_k = sqrt(2);
+      uct.max_millis = 20000;
+      uct.max_iterations = 1000;
+      uct.simulation_depth = 0;
+
+      return uct.run(state);
+    }
+
+    StateEntry simulated_annealing(StateEntry instance, unsigned steps) {
+      StateEntry current(instance);
+      StateEntry best = current;
+
+      double temperature;
+
+      for (int k = 0; k <= steps; k++) {
+        temperature = 1.0 - ((double) k / steps);
+        double r = (double) std::rand() / RAND_MAX;
+
+        StateEntry next(instance); //(instance, current);
+
+        if (current.is_teammate ? next.my_score() < current.my_score() : next.my_score() > current.my_score()) {
+          current = next;
+        } else if (temperature > r) {
+          current = next;
+        }
+
+        if (current.my_score() > best.my_score()) {
+          best = current;
+        }
+      }
+
+      return best;
+    }
+
+  StateEntry current;
 };
 
 #endif //MYSTRATEGY_ENGINE_H

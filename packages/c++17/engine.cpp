@@ -56,7 +56,7 @@ void move_entity(const Rules& rules, Entity& e, const double delta_time) {
 
 void update(const Rules& rules, const double delta_time, vector<RobotEntity>& robots, BallEntity& ball,
             vector<NitroEntity>& nitros, GameState& game_state) {
-  // random.shuffle(robots[:]) // TODO
+  // std::shuffle(robots.begin(), robots.end(), g2);
   for (RobotEntity& robot : robots) {
     Vector3D target_velocity = Vector3D(robot.action.target_velocity_x, robot.action.target_velocity_y,
                                         robot.action.target_velocity_z);
@@ -129,10 +129,13 @@ void update(const Rules& rules, const double delta_time, vector<RobotEntity>& ro
 }
 
 void tick(const Rules& rules, vector<RobotEntity>& robots, BallEntity& ball,
-          vector<NitroEntity>& nitros, GameState& game_state) {
-  double delta_time = 1.0 / rules.TICKS_PER_SECOND;
-  for (int i = 0; i < rules.MICROTICKS_PER_TICK; ++i) {
-    update(rules, delta_time / rules.MICROTICKS_PER_TICK, robots, ball, nitros, game_state);
+          vector<NitroEntity>& nitros, GameState& game_state, double delta_time, bool microticks = true) {
+  if (microticks) {
+    for (int i = 0; i < rules.MICROTICKS_PER_TICK; ++i) {
+      update(rules, delta_time / rules.MICROTICKS_PER_TICK, robots, ball, nitros, game_state);
+    }
+  } else {
+    update(rules, delta_time, robots, ball, nitros, game_state);
   }
   for (auto& nitro : nitros) {
     if (nitro.nitro_amount == 0) {
@@ -142,7 +145,8 @@ void tick(const Rules& rules, vector<RobotEntity>& robots, BallEntity& ball,
       }
     }
   }
+  game_state.current_tick++;
 }
 
-double Engine::ms_sum = 0.0;
-int Engine::ms_count = 0;
+double State::ms_sum = 0.0;
+int State::ms_count = 0;

@@ -7,7 +7,7 @@ MyStrategy::MyStrategy() { }
 
 void check_engine_correctness(const Robot& me, const Rules& rules, const Game& game, Action& action) {
 
-  Engine engine(me.id, rules, game);
+  State engine(me.id, rules, game);
   for (int i = 0; i < 1000; i++) {
     for (RobotEntity& r : engine.robots) {
       if (r.is_teammate and r.id == 1) {
@@ -25,7 +25,7 @@ void check_engine_correctness(const Robot& me, const Rules& rules, const Game& g
 }
 
 void print_r1_r2_positions(const Robot& me, const Rules& rules, const Game& game, Action& action) {
-  Engine engine(me.id, rules, game);
+  State engine(me.id, rules, game);
   while (true) {
     engine.simulate();
     for (RobotEntity& r : engine.robots) {
@@ -40,6 +40,10 @@ void print_r1_r2_positions(const Robot& me, const Rules& rules, const Game& game
 void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Action& action) {
   //if (game.current_tick > 100) check_engine_correctness(me, rules, game, action); return;
   //if (game.current_tick > 100) print_r1_r2_positions(me, rules, game, action);
+  Engine engine(me, rules, game);
+  Action best = engine.find_best();
+  action = best;
+  return;
 
   ball.set(game.ball.x, game.ball.z, game.ball.y);
   ball_v.set(game.ball.velocity_x, game.ball.velocity_z, game.ball.velocity_y);
