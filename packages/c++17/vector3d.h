@@ -56,6 +56,10 @@ struct Vector3D {
     }
   }
 
+  Vector3D plane() const {
+    return Vector3D(x, 0, z);
+  }
+
 private:
   double _len = -1;
 };

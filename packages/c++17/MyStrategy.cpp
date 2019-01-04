@@ -1,5 +1,6 @@
 #include "MyStrategy.h"
 #include "engine.h"
+#include "ofxMSAmcts.h"
 
 using namespace model;
 
@@ -37,12 +38,21 @@ void print_r1_r2_positions(const Robot& me, const Rules& rules, const Game& game
   }
 }
 
+string MyStrategy::custom_rendering() {
+  return "[" + (*debug_string) + "{\"Text\":\"1\"}]";
+}
+
 void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Action& action) {
+  //if (use_prev_action(me, rules, game, action)) return;
+  //if (game.current_tick < 10000) return;
+
+  debug_string->clear();
   //if (game.current_tick > 100) check_engine_correctness(me, rules, game, action); return;
   //if (game.current_tick > 100) print_r1_r2_positions(me, rules, game, action);
   Engine engine(me, rules, game);
   Action best = engine.find_best();
   action = best;
+  history[me.id] = {game.current_tick, action};
   return;
 
   ball.set(game.ball.x, game.ball.z, game.ball.y);

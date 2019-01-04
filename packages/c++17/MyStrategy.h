@@ -8,6 +8,7 @@
 #include "Strategy.h"
 #include "math.h"
 #include "engine.h"
+#include <map>
 
 const double EPS = 1e-5;
 
@@ -48,6 +49,11 @@ struct Point3D : Point2D {
   void operator*=(double val) { x *= val; z *= val; y *= val; }
 };
 
+struct HistoryItem {
+    int current_tick;
+    Action action;
+};
+
 class MyStrategy : public Strategy {
 public:
 
@@ -57,7 +63,18 @@ public:
   MyStrategy();
 
   void act(const model::Robot& me, const model::Rules& rules, const model::Game& world, model::Action& action) override;
-
+  bool use_prev_action(const Robot& me, const Rules& rules, const Game& game, Action& action) {
+    if (history.count(me.id)) {
+      HistoryItem& it = history.at(me.id);
+      if (game.current_tick - it.current_tick < 10) {
+        action = it.action;
+        return true;
+      }
+    }
+    return false;
+  }
+  std::string custom_rendering() override;
+  map<int, HistoryItem> history;
 };
 
 #endif

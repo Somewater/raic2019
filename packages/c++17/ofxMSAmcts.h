@@ -9,6 +9,9 @@ MCTS Code Based on the Java (Simon Lucas - University of Essex) and Python (Pete
 #include "TreeNodeT.h"
 #include "MSALoopTimer.h"
 #include <cfloat>
+#include <sstream>
+
+extern string* debug_string;
 
 namespace msa {
     namespace mcts {
@@ -164,8 +167,10 @@ namespace msa {
 
                 // return best node's action
                 if(best_node) {
+                  std::stringstream ss;
                   cout << "best_value=" << best_node->get_value() << ", during=" << timer.run_duration_millis()
-                    << " ms, iterations=" << iterations << ", depth=" << best_node->get_depth() << endl;
+                    << " ms, iterations=" << iterations << ", visits=" << best_node->get_num_visits() << ";" << endl;
+                  //*debug_string += ss.str();
                   return best_node->get_action();
                 }
 
