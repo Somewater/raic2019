@@ -49,11 +49,6 @@ struct Point3D : Point2D {
   void operator*=(double val) { x *= val; z *= val; y *= val; }
 };
 
-struct HistoryItem {
-    int current_tick;
-    Action action;
-};
-
 class MyStrategy : public Strategy {
 public:
 
@@ -66,7 +61,7 @@ public:
   bool use_prev_action(const Robot& me, const Rules& rules, const Game& game, Action& action) {
     if (history.count(me.id)) {
       HistoryItem& it = history.at(me.id);
-      if (game.current_tick - it.current_tick < 10) {
+      if (game.current_tick - it.current_tick < 3) {
         action = it.action;
         return true;
       }

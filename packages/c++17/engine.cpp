@@ -11,7 +11,9 @@
 #include <algorithm>
 
 double collide_entities__random(double x, double y) {
-  return min(x, y) + abs(x - y) * 0.5;
+  //return min(x, y) + abs(x - y) * 0.5;
+  double r = (double) std::rand() / RAND_MAX;
+  return min(x, y) + abs(x - y) * r;
 }
 
 void collide_entities(const Rules& rules, Entity& a, Entity& b) {
@@ -23,12 +25,12 @@ void collide_entities(const Rules& rules, Entity& a, Entity& b) {
     double k_b = (1.0 / b.mass) / ((1.0 / a.mass) + (1.0 / b.mass));
     Vector3D normal = delta_position.normalize();
     a.position = a.position.sub(normal.mul(penetration * k_a));
-    b.position = b.position.sub(normal.mul(penetration * k_b));
-    double delta_velocity = normal.dot(b.velocity.sub(a.velocity)) + b.radius_change_speed - a.radius_change_speed;
+    b.position = b.position.add(normal.mul(penetration * k_b));
+    double delta_velocity = normal.dot(b.velocity.sub(a.velocity)) - b.radius_change_speed - a.radius_change_speed;
     if (delta_velocity < 0) {
       Vector3D impulse = normal.mul((1.0 + collide_entities__random(rules.MIN_HIT_E, rules.MAX_HIT_E)) * delta_velocity);
       a.velocity = a.velocity.add(impulse.mul(k_a));
-      b.velocity = a.velocity.sub(impulse.mul(k_b));
+      b.velocity = b.velocity.sub(impulse.mul(k_b));
     }
   }
 }
@@ -125,6 +127,65 @@ void update(const Rules& rules, const double delta_time, vector<RobotEntity>& ro
         }
       }
     }
+  }
+}
+
+void update_only_ball(const Rules& rules, const double delta_time, vector<RobotEntity>& robots, BallEntity& ball, vector<NitroEntity>& nitros, GameState& game_state) {
+  // std::shuffle(robots.begin(), robots.end(), g2);
+  for (RobotEntity& robot : robots) {
+    Vector3D target_velocity = Vector3D(robot.action.target_velocity_x, robot.action.target_velocity_y,
+                                        robot.action.target_velocity_z);
+    if (robot.touch) {
+      target_velocity = target_velocity.min(rules.ROBOT_MAX_GROUND_SPEED);
+      target_velocity = target_velocity.sub(robot.touch_normal.mul(robot.touch_normal.dot(target_velocity)));
+      Vector3D target_velocity_change = target_velocity.sub(robot.velocity);
+      if (target_velocity_change.len() > 0) {
+        double acceleration = rules.ROBOT_ACCELERATION * max(0.0, robot.touch_normal.y);
+        robot.velocity = robot.velocity.add(
+                (target_velocity_change.normalize().mul(acceleration * delta_time)).min(target_velocity_change.len()));
+      }
+    }
+//    if (robot.action.use_nitro) {
+//      Vector3D target_velocity_change = (target_velocity.sub(robot.velocity)).min(
+//              robot.nitro_amount * rules.NITRO_POINT_VELOCITY_CHANGE);
+//      if (target_velocity_change.len() > 0) {
+//        Vector3D acceleration = target_velocity_change.normalize().mul(rules.ROBOT_NITRO_ACCELERATION);
+//        Vector3D velocity_change = (acceleration.mul(delta_time)).min(target_velocity_change.len());
+//        robot.velocity = robot.velocity.add(velocity_change);
+//        robot.nitro_amount -= velocity_change.len() / rules.NITRO_POINT_VELOCITY_CHANGE;
+//      }
+//    }
+    move_entity(rules, robot, delta_time);
+    robot.radius = rules.ROBOT_MIN_RADIUS +
+                   (rules.ROBOT_MAX_RADIUS - rules.ROBOT_MIN_RADIUS) * robot.action.jump_speed /
+                   rules.ROBOT_MAX_JUMP_SPEED;
+    robot.radius_change_speed = robot.action.jump_speed;
+  }
+
+  move_entity(rules, ball, delta_time);
+
+//  for (int i = 0; i < robots.size(); ++i) {
+//    for (int j = 0; j < i; ++j) {
+//      collide_entities(rules, robots[i], robots[j]);
+//    }
+//  }
+
+  for (RobotEntity& robot : robots) {
+    collide_entities(rules, robot, ball);
+//    pair<bool, Vector3D> collision_normal = collide_with_arena(rules, robot);
+//    if (collision_normal.first) {
+//      robot.touch = true;
+//      robot.touch_normal = collision_normal.second;
+//    } else {
+//      robot.touch = false;
+//    }
+  }
+  collide_with_arena(rules, ball);
+  if (abs(ball.position.z) > rules.arena.depth / 2 + ball.radius) {
+    if (ball.position.z > 0) // TODO: check it
+      game_state.my_score += 1;
+    else
+      game_state.enemy_score += 1;
   }
 }
 

@@ -36,7 +36,11 @@ double clamp_float(const double value, const double minumum, const double maximu
 }
 
 Dan dan_to_arena_quarter(const Arena& arena, const Vector3D& point) {
+  // Ground
   Dan dan = dan_to_plane(point, Vector3D(0, 0, 0), Vector3D(0, 1, 0));
+
+  // Ceiling
+  dan = min_dan(dan, dan_to_plane(point, Vector3D(0, arena.height, 0), Vector3D(0, -1, 0)));
 
   // Side x
   dan = min_dan(dan, dan_to_plane(point, Vector3D(arena.width / 2, 0, 0), Vector3D(-1, 0, 0)));

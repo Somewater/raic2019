@@ -168,6 +168,7 @@ namespace msa {
                 // return best node's action
                 if(best_node) {
                   std::stringstream ss;
+                  //best_node->get_state().state.my_score(true);
                   cout << "best_value=" << best_node->get_value() << ", during=" << timer.run_duration_millis()
                     << " ms, iterations=" << iterations << ", visits=" << best_node->get_num_visits() << ";" << endl;
                   //*debug_string += ss.str();

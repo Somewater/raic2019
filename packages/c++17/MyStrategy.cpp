@@ -6,36 +6,60 @@ using namespace model;
 
 MyStrategy::MyStrategy() { }
 
-void check_engine_correctness(const Robot& me, const Rules& rules, const Game& game, Action& action) {
-
-  State engine(me.id, rules, game);
-  for (int i = 0; i < 1000; i++) {
-    for (RobotEntity& r : engine.robots) {
-      if (r.is_teammate and r.id == 1) {
-        cout << i << ") " << "robot " << r.id << " position=" << r.position << " velocity=" << r.velocity << endl;
-      }
+void show_state(State& state) {
+  stringstream ss;
+  for (RobotEntity& e : state.robots) {
+    if (e.is_teammate) {
+      ss << "  {"
+            "    \"Sphere\": {"
+            "      \"x\": " << e.position.x << ","
+            "      \"y\": " << e.position.y << ","
+            "      \"z\": " << e.position.z << ","
+            "      \"radius\": 1.0,"
+            "      \"r\": 0.0,"
+            "      \"g\": 1.0,"
+            "      \"b\": 0.0,"
+            "      \"a\": 0.5"
+            "    }"
+            "  },";
+    } else {
+      ss << "  {"
+            "    \"Sphere\": {"
+            "      \"x\": " << e.position.x << ","
+            "      \"y\": " << e.position.y << ","
+            "      \"z\": " << e.position.z << ","
+            "      \"radius\": 1.0,"
+            "      \"r\": 1.0,"
+            "      \"g\": 0.0,"
+            "      \"b\": 0.0,"
+            "      \"a\": 0.5"
+            "    }"
+            "  },";
     }
-    engine.simulate();
   }
-
-//  action.target_velocity_x = 100;
-//  if (me.id == 1) {
-//    cout << game.current_tick << ") " << "robot " << me.id << " position=(" << me.x << "," << me.y << "," << me.z
-//        << ") velocity=(" << me.velocity_x << "," << me.velocity_y << "," << me.velocity_z << ")" << endl;
-//  }
+  ss << "  {"
+"    \"Sphere\": {"
+"      \"x\": " << state.ball.position.x << ","
+"      \"y\": " << state.ball.position.y << ","
+"      \"z\": " << state.ball.position.z << ","
+"      \"radius\": 2.0,"
+"      \"r\": 1.0,"
+"      \"g\": 1.0,"
+"      \"b\": 1.0,"
+"      \"a\": 0.5"
+"    }"
+"  },";
+  *debug_string += ss.str();
 }
 
-void print_r1_r2_positions(const Robot& me, const Rules& rules, const Game& game, Action& action) {
-  State engine(me.id, rules, game);
-  while (true) {
-    engine.simulate();
-    for (RobotEntity& r : engine.robots) {
-      if (r.id == 2) cout << "R_" << r.id << "(position=" << r.position << ", velocity=" << r.velocity << ")\n" << endl;
-    }
-    for (RobotEntity& r : engine.robots) {
-      if (r.id == 1) cout << "R_" << r.id << "(position=" << r.position << ", velocity=" << r.velocity << ")\n" << endl;
-    }
+void check_engine_correctness(const Robot& me, const Rules& rules, const Game& game, Action& action, map<int,HistoryItem>& history) {
+
+  State state(me.id, rules, game, history);
+  for (int i = 0; i < 10; i++) {
+    state.simulate();
+    show_state(state);
   }
+
 }
 
 string MyStrategy::custom_rendering() {
@@ -47,9 +71,9 @@ void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Acti
   //if (game.current_tick < 10000) return;
 
   debug_string->clear();
-  //if (game.current_tick > 100) check_engine_correctness(me, rules, game, action); return;
+  //check_engine_correctness(me, rules, game, action,history);
   //if (game.current_tick > 100) print_r1_r2_positions(me, rules, game, action);
-  Engine engine(me, rules, game);
+  Engine engine(me, rules, game, history);
   Action best = engine.find_best();
   action = best;
   history[me.id] = {game.current_tick, action};
