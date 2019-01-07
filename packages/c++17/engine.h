@@ -315,8 +315,8 @@ public:
     score += ball_enemy_sum_distance * ball_enemy_sum_distance * 0.0005;
     score += ball.position.z * 1;
     score += ball.velocity.z * 0.1;
-    score -= (2 - my_touch) * 10000000; // TODO
-    //score += enemy_touch * 100; // TODO
+    score -= (robots.size() / 2 - my_touch) * 1; // TODO
+    score += (robots.size() / 2 - enemy_touch) * 1; // TODO
 //    cout << "SCORE: " <<
 //      (ball_my_min_distance * ball_my_min_distance * 0.01) << "," <<
 //      (ball_enemy_min_distance * ball_enemy_min_distance * 0.01) << "," <<
@@ -548,9 +548,11 @@ public:
                 a.target_velocity_x = x;
                 a.target_velocity_z = z;
                 actions.push_back({a});
-                if (is_teammate) {
-                  // pass
-                } else {
+                bool jump =
+                    state.ball.position.distance_to(robot.position) <
+                      (state.rules.BALL_RADIUS + state.rules.ROBOT_MAX_RADIUS)
+                      && robot.position.y < state.ball.position.y;
+                if (jump) {
                   a.jump_speed = 15;
                   actions.push_back({a});
                 }
