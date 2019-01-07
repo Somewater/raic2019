@@ -78,7 +78,7 @@ void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Acti
 
   debug_text->clear();
   debug_draw->clear();
-  check_engine_correctness(me, rules, game, action,history); return;
+  //check_engine_correctness(me, rules, game, action,history); return;
   //if (game.current_tick > 100) print_r1_r2_positions(me, rules, game, action);
   Engine engine(me, rules, game, history);
   Action best = engine.find_best();

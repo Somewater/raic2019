@@ -240,9 +240,9 @@ public:
     if (dt == 0.0) {
       dt = 1.0 / rules.TICKS_PER_SECOND;
     }
-    vector<CollideArena> collision_arena;
-    vector<CollideEntities> collision_entities;
-    tick(rules, robots, ball, nitros, game_state, dt, microticks, false, collision_arena, collision_entities);
+    collision_arena.clear();
+    collision_entities.clear();
+    tick(rules, robots, ball, nitros, game_state, dt, microticks, true, collision_arena, collision_entities);
     // auto duration = steady_clock::now() - start;
     // double ms = duration_cast<nanoseconds>(duration).count() * 0.000001;
     // ms_sum += ms;
@@ -250,6 +250,7 @@ public:
     // cout << "Tick: " << ms << " ms, avg: " << (ms_sum / ms_count) << " ms" << endl;
   }
 
+  // -1.0 .. 1.0
   double my_score() const {
     bool win = false;
     bool lose = false;
@@ -302,14 +303,16 @@ public:
         ball_enemy_sum_distance += dist;
       }
     }
+    //return ball.position.z / (rules.arena.depth * 0.5);
+
     score -= ball_my_min_distance * ball_my_min_distance * 0.01;
     score += ball_enemy_min_distance * ball_enemy_min_distance * 0.005;
     score -= ball_my_sum_distance * ball_my_sum_distance * 0.001;
     score += ball_enemy_sum_distance * ball_enemy_sum_distance * 0.0005;
     score += ball.position.z * 1;
     score += ball.velocity.z * 0.1;
-    score += my_touch * 1;
-    score -= enemy_touch * 1;
+    score -= (2 - my_touch) * 10000000; // TODO
+    //score += enemy_touch * 100; // TODO
 //    cout << "SCORE: " <<
 //      (ball_my_min_distance * ball_my_min_distance * 0.01) << "," <<
 //      (ball_enemy_min_distance * ball_enemy_min_distance * 0.01) << "," <<
@@ -398,8 +401,13 @@ public:
       return score;
     }
 
-  bool is_terminal() const {
+  bool is_goal() const {
     return abs(ball.position.z) > rules.arena.depth * 0.5 + ball.radius;
+  }
+
+
+  bool is_entity_collision() const {
+    return !collision_entities.empty();
   }
 
   State (const State &other) : rules(other.rules),
@@ -425,6 +433,8 @@ public:
   vector<RobotEntity> robots;
   BallEntity ball;
   vector<NitroEntity> nitros;
+  vector<CollideArena> collision_arena;
+  vector<CollideEntities> collision_entities;
 };
 
 struct StateEntry {
@@ -439,28 +449,44 @@ struct StateEntry {
     }
 };
 
+struct McAction {
+  Action action;
+  bool playout = false;
+};
+
 class McState {
 public:
     McState(StateEntry e, int initial_id) : state(e.state), id(e.id), is_teammate(e.is_teammate),
-    initial_id(initial_id), initial_game_tick(e.state.game_state.current_tick) {
+    initial_id(initial_id), initial_game_tick(e.state.game_state.current_tick), depth(0), ticks(0) {
 
     }
 
-    void apply_action(const Action& action) {
-      state.robots[id - 1].action = action;
+    void apply_action(const McAction& action) {
+      state.robots[id - 1].action = action.action;
       int new_id = (id % state.robots.size()) + 1;
-      state.simulate(1.0/60/state.robots.size(), false);
+      // 0.004166666
+      double dt = action.playout ? 0.1 : 0.05;
+      state.simulate(dt, false);
       int depth = state.game_state.current_tick - initial_game_tick;
-      if (is_teammate && (depth > 2 || rand() % 100 > 90)) {
+      if (is_teammate) {
         RobotEntity& e = state.robots[id - 1];
         stringstream ss;
         float r = depth % 3 == 0 ? 1.0 : 0.0;
         float g = depth % 3 == 1 ? 1.0 : 0.0;
         float b = depth % 3 == 2 ? 1.0 : 0.0;
+        if (action.playout) {
+          r = 1;
+          g = 1;
+          b = 0;
+        }
         debug_draw->push_back({e.position.x, e.position.y, e.position.z, 1.0, r, g, b, 0.1});
       }
       //debug_draw->push_back({state.ball.position.x, state.ball.position.y, state.ball.position.z, 0.1, 0, 0, 1, 0.5});
       id = new_id;
+      if (new_id == initial_id) {
+        depth++;
+      }
+      ticks++;
       for (const RobotEntity& e : state.robots) {
         if (e.id == id) {
           is_teammate = e.is_teammate;
@@ -470,45 +496,57 @@ public:
     }
 
     bool is_terminal() const {
-      return state.is_terminal();
+      return state.is_goal(); // || (depth > 2 && state.is_entity_collision());
     }
 
-    bool get_random_action(Action& action) const {
-      int x = rand() % 200 - 100;
-      int z = rand() % 200 - 100;
-      action.target_velocity_x = x;
-      action.target_velocity_z = z;
-      if (!is_teammate) {
-        action.jump_speed = (rand() % 100 > 90 ? 15 : 0);
+    bool get_random_action(McAction& action) const {
+      vector<McAction> actions;
+      get_actions(actions);
+      if (actions.empty()) {
+        return false;
+      } else {
+        action = actions[rand() % actions.size()];
+        action.playout = true;
+        return true;
       }
-      return true;
     }
 
     const std::vector<float> evaluate() const {
-      float score = (float) state.my_score();
-      return {0, score, -score};
+      // [-1:1] to [0:1]
+      float score_0_1 = state.my_score() * 0.5 + 0.5;
+      return {0, score_0_1, 1.0f - score_0_1};
     }
 
     int agent_id() const {
       return (is_teammate ? 1 : 2);
     }
 
-    void get_actions(std::vector<Action>& actions) const  {
+    void get_actions(std::vector<McAction>& actions) const  {
       actions.clear();
-      for (int x = -100; x <= 100; x += 25) {
-        for (int z = -100; z <= 100; z += 25) {
-          Action a;
-          a.target_velocity_x = x;
-          a.target_velocity_z = z;
-          actions.push_back(a);
-          if (is_teammate) {
-            // pass
-          } else {
-            a.jump_speed = 15;
-            actions.push_back(a);
+      for (const RobotEntity& robot : state.robots) {
+        if (robot.id == id) {
+          actions.push_back({robot.action});
+
+          if (robot.touch) {
+            for (int x = -100; x <= 100; x += 100) {
+              for (int z = -100; z <= 100; z += 100) {
+                Action a;
+                a.target_velocity_x = x;
+                a.target_velocity_z = z;
+                actions.push_back({a});
+                if (is_teammate) {
+                  // pass
+                } else {
+                  a.jump_speed = 15;
+                  actions.push_back({a});
+                }
+              }
+            }
           }
+          return;
         }
       }
+      throw runtime_error("Robot not found");
     }
 
     State state;
@@ -516,6 +554,8 @@ public:
     bool is_teammate;
     int initial_id;
     int initial_game_tick;
+    int depth; // in real ticks
+    int ticks;
 };
 
 /**
@@ -535,14 +575,14 @@ public:
 private:
     Action monte_carlo() {
       McState state(current, current.id);
-      UCT<McState, Action> uct;
+      UCT<McState, McAction> uct;
 
       uct.uct_k = UCT_K;
       uct.max_millis = 20000;
       uct.max_iterations = UTC_MAX_ITERATIONS;
       uct.simulation_depth = UTC_SIMULATION_DEPTH;
 
-      return uct.run(state);
+      return uct.run(state).action;
     }
 
     StateEntry simulated_annealing(StateEntry instance, unsigned steps) {
