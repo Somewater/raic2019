@@ -445,7 +445,8 @@ struct StateEntry {
 
 class McState {
 public:
-    McState(StateEntry e, int initial_id) : state(e.state), id(e.id), is_teammate(e.is_teammate), action(e.action), initial_id(initial_id) {
+    McState(StateEntry e, int initial_id) : state(e.state), id(e.id), is_teammate(e.is_teammate),
+    initial_id(initial_id), initial_game_tick(e.state.game_state.current_tick) {
 
     }
 
@@ -453,18 +454,22 @@ public:
       state.robots[id - 1].action = action;
       int new_id = (id % state.robots.size()) + 1;
       state.simulate(1.0/60/state.robots.size(), false);
-      if (is_teammate && (rand() % 100 > 90)) {
+      int depth = state.game_state.current_tick - initial_game_tick;
+      if (is_teammate && (depth > 2 || rand() % 100 > 90)) {
         RobotEntity& e = state.robots[id - 1];
         stringstream ss;
+        float r = depth % 3 == 0 ? 1.0 : 0.0;
+        float g = depth % 3 == 1 ? 1.0 : 0.0;
+        float b = depth % 3 == 2 ? 1.0 : 0.0;
         ss << "  {"
               "    \"Sphere\": {"
               "      \"x\": " << e.position.x << ","
               "      \"y\": " << e.position.y << ","
               "      \"z\": " << e.position.z << ","
               "      \"radius\": 1.0,"
-              "      \"r\": 1.0,"
-              "      \"g\": 1.0,"
-              "      \"b\": 0.0,"
+              "      \"r\": " << r << ","
+              "      \"g\": " << g << ","
+              "      \"b\": " << b << ","
               "      \"a\": 0.1"
               "    }"
               "  },";
@@ -491,10 +496,6 @@ public:
           break;
         }
       }
-    }
-
-    StateEntry to_state_entry() {
-      return StateEntry { state, id, is_teammate, action, nullptr };
     }
 
     bool is_terminal() const {
@@ -538,8 +539,8 @@ public:
     State state;
     int id;
     bool is_teammate;
-    Action action;
     int initial_id;
+    int initial_game_tick;
 };
 
 /**
