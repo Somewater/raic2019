@@ -11,7 +11,7 @@
 #include <algorithm>
 
 double collide_entities__random(double x, double y) {
-  //return min(x, y) + abs(x - y) * 0.5;
+  return min(x, y) + abs(x - y) * 0.5;
   double r = (double) std::rand() / RAND_MAX;
   return min(x, y) + abs(x - y) * r;
 }
@@ -61,8 +61,8 @@ void move_entity(const Rules& rules, Entity& e, const double delta_time) {
 void update(const Rules& rules, const double delta_time, vector<RobotEntity>& robots, BallEntity& ball,
             vector<NitroEntity>& nitros, GameState& game_state,
             bool register_collisions,
-            vector<CollideArena>collision_arena,
-            vector<CollideEntities> collision_entities) {
+            vector<CollideArena>& collision_arena,
+            vector<CollideEntities>& collision_entities) {
   // std::shuffle(robots.begin(), robots.end(), g2);
   for (RobotEntity& robot : robots) {
     Vector3D target_velocity = Vector3D(robot.action.target_velocity_x, robot.action.target_velocity_y,
@@ -155,8 +155,8 @@ void update(const Rules& rules, const double delta_time, vector<RobotEntity>& ro
 void tick(const Rules& rules, vector<RobotEntity>& robots, BallEntity& ball,
           vector<NitroEntity>& nitros, GameState& game_state, double delta_time, bool microticks,
           bool register_collisions,
-          vector<CollideArena>collision_arena,
-          vector<CollideEntities> collision_entities) {
+          vector<CollideArena>& collision_arena,
+          vector<CollideEntities>& collision_entities) {
   if (microticks) {
     for (int i = 0; i < rules.MICROTICKS_PER_TICK; ++i) {
       update(rules, delta_time / rules.MICROTICKS_PER_TICK, robots, ball, nitros, game_state, register_collisions, collision_arena, collision_entities);

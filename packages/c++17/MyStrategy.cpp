@@ -21,7 +21,14 @@ void show_state(State& state) {
 void check_engine_correctness(const Robot& me, const Rules& rules, const Game& game, Action& action, map<int,HistoryItem>& history) {
 
   State state(me.id, rules, game, history);
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 100; i++) {
+//    for (RobotEntity& r : state.robots) {
+//      bool jump = (state.ball.position.distance_to(r.position) < (BALL_RADIUS + ROBOT_MAX_RADIUS) && r.position.y < state.ball.position.y);
+//      if (jump) {
+//        r.action.jump_speed = ROBOT_MAX_JUMP_SPEED;
+//      }
+//    }
+
     state.simulate(0, false);
     show_state(state);
   }

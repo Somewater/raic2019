@@ -198,14 +198,14 @@ void move_entity(const Rules& rules, Entity& e, const double delta_time);
 void update(const Rules& rules, const double delta_time, vector<RobotEntity>& robots, BallEntity& ball,
     vector<NitroEntity>& nitros, GameState& game_state,
     bool register_collisions,
-    vector<CollideArena>collision_arena,
-    vector<CollideEntities> collision_entities);
+    vector<CollideArena>& collision_arena,
+    vector<CollideEntities>& collision_entities);
 
 void tick(const Rules& rules, vector<RobotEntity>& robots, BallEntity& ball,
     vector<NitroEntity>& nitros, GameState& game_state,double delta_time,bool microticks,
     bool register_collisions,
-    vector<CollideArena>collision_arena,
-    vector<CollideEntities> collision_entities);
+    vector<CollideArena>& collision_arena,
+    vector<CollideEntities>& collision_entities);
 
 class State {
 public:
@@ -240,7 +240,9 @@ public:
     if (dt == 0.0) {
       dt = 1.0 / rules.TICKS_PER_SECOND;
     }
-    tick(rules, robots, ball, nitros, game_state, dt, microticks, false, {}, {});
+    vector<CollideArena> collision_arena;
+    vector<CollideEntities> collision_entities;
+    tick(rules, robots, ball, nitros, game_state, dt, microticks, false, collision_arena, collision_entities);
     // auto duration = steady_clock::now() - start;
     // double ms = duration_cast<nanoseconds>(duration).count() * 0.000001;
     // ms_sum += ms;
