@@ -1,5 +1,7 @@
 #include "TreeNodeT.h"
 #include "MSALoopTimer.h"
 #include <cfloat>
+#include "ofxMSAmcts.h"
 
-std::string* debug_string = new std::string;
+std::vector<DrawSphere>* debug_draw = new std::vector<DrawSphere>;
+std::string* debug_text = new std::string;

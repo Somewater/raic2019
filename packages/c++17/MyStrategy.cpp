@@ -10,68 +10,68 @@ void show_state(State& state) {
   stringstream ss;
   for (RobotEntity& e : state.robots) {
     if (e.is_teammate) {
-      ss << "  {"
-            "    \"Sphere\": {"
-            "      \"x\": " << e.position.x << ","
-            "      \"y\": " << e.position.y << ","
-            "      \"z\": " << e.position.z << ","
-            "      \"radius\": 1.0,"
-            "      \"r\": 0.0,"
-            "      \"g\": 1.0,"
-            "      \"b\": 0.0,"
-            "      \"a\": 0.5"
-            "    }"
-            "  },";
+      debug_draw->push_back({e.position.x, e.position.y, e.position.z, 1, 0, 1, 0, 0.5});
     } else {
-      ss << "  {"
-            "    \"Sphere\": {"
-            "      \"x\": " << e.position.x << ","
-            "      \"y\": " << e.position.y << ","
-            "      \"z\": " << e.position.z << ","
-            "      \"radius\": 1.0,"
-            "      \"r\": 1.0,"
-            "      \"g\": 0.0,"
-            "      \"b\": 0.0,"
-            "      \"a\": 0.5"
-            "    }"
-            "  },";
+      debug_draw->push_back({e.position.x, e.position.y, e.position.z, 1, 1, 0, 0, 0.5});
     }
   }
-  ss << "  {"
-"    \"Sphere\": {"
-"      \"x\": " << state.ball.position.x << ","
-"      \"y\": " << state.ball.position.y << ","
-"      \"z\": " << state.ball.position.z << ","
-"      \"radius\": 2.0,"
-"      \"r\": 1.0,"
-"      \"g\": 1.0,"
-"      \"b\": 1.0,"
-"      \"a\": 0.5"
-"    }"
-"  },";
-  *debug_string += ss.str();
+  debug_draw->push_back({state.ball.position.x, state.ball.position.y, state.ball.position.z, 2, 1, 1, 1, 0.5});
 }
 
 void check_engine_correctness(const Robot& me, const Rules& rules, const Game& game, Action& action, map<int,HistoryItem>& history) {
 
   State state(me.id, rules, game, history);
   for (int i = 0; i < 10; i++) {
-    state.simulate();
+    state.simulate(0, false);
     show_state(state);
   }
 
+  stringstream ss;
+  vector<Robot> robots = game.robots;
+  sort(robots.begin(), robots.end(), [](Robot& r1, Robot& r2){ return r1.id < r2.id; });
+  for (const Robot& r : robots) {
+
+    ss << "R" << r.id << ": velocity=(" << r.velocity_x << "," << r.velocity_y << "," << r.velocity_z << ")" <<
+     ", radius=" << r.radius << ", touch=";
+    if (r.touch) {
+      ss << "(" << r.touch_normal_x << "," << r.touch_normal_y << "," << r.touch_normal_z << ")";
+    } else {
+      ss << "None";
+    }
+    ss << "\\n";
+  }
+  ss << "BALL: velocity=(" << game.ball.velocity_x << "," << game.ball.velocity_y << "," << game.ball.velocity_z << ")\\n";
+  *debug_text += ss.str();
 }
 
 string MyStrategy::custom_rendering() {
-  return "[" + (*debug_string) + "{\"Text\":\"1\"}]";
+  stringstream ss;
+  ss << "[";
+  for (const DrawSphere& s : *debug_draw) {
+    ss << "  {"
+          "    \"Sphere\": {"
+          "      \"x\": " << s.x << "," <<
+          "      \"y\": " << s.y << "," <<
+          "      \"z\": " << s.z << "," <<
+          "      \"radius\": " << s.radius << "," <<
+          "      \"r\": " << s.r << "," <<
+          "      \"g\": " << s.g << "," <<
+          "      \"b\": " << s.b << "," <<
+          "      \"a\": " << s.a << "" <<
+          "    }"
+          "  },";
+  }
+  ss << "{\"Text\":\"" + (*debug_text) + "\"}]";
+  return ss.str();
 }
 
 void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Action& action) {
   //if (use_prev_action(me, rules, game, action)) return;
   //if (game.current_tick < 10000) return;
 
-  debug_string->clear();
-  //check_engine_correctness(me, rules, game, action,history);
+  debug_text->clear();
+  debug_draw->clear();
+  check_engine_correctness(me, rules, game, action,history); return;
   //if (game.current_tick > 100) print_r1_r2_positions(me, rules, game, action);
   Engine engine(me, rules, game, history);
   Action best = engine.find_best();

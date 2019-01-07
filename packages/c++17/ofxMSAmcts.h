@@ -11,7 +11,16 @@ MCTS Code Based on the Java (Simon Lucas - University of Essex) and Python (Pete
 #include <cfloat>
 #include <sstream>
 
-extern string* debug_string;
+struct DrawSphere {
+  double x, y, z;
+  double radius;
+  double r, g, b;
+  double a;
+};
+extern std::vector<DrawSphere>* debug_draw;
+extern std::string* debug_text;
+
+using namespace std;
 
 namespace msa {
     namespace mcts {
@@ -172,7 +181,6 @@ namespace msa {
                   cout << "best_value=" << (best_node->get_value() / (best_node->get_num_visits() + FLT_EPSILON))
                     << ", during=" << timer.run_duration_millis()
                     << " ms, iterations=" << iterations << ", visits=" << best_node->get_num_visits() << ";" << endl;
-                  //*debug_string += ss.str();
                   return best_node->get_action();
                 }
 

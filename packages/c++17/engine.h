@@ -70,6 +70,18 @@ public:
   Vector3D velocity;
   double radius_change_speed;
   double arena_e = 0;
+  bool is_robot;
+  bool is_ball;
+};
+
+struct CollideEntities {
+  Entity entity1; // robot
+  Entity entity2; // robot or ball
+};
+
+struct CollideArena {
+  Entity entity;
+  Vector3D point;
 };
 
 class RobotEntity : public Entity {
@@ -93,6 +105,8 @@ public:
                 is_teammate(is_teammate),
                 action(action) {
     this->arena_e = arena_e;
+    this->is_robot = true;
+    this->is_ball = false;
   }
 
   static RobotEntity from_robot(const Robot& robot, const Action& action, const Rules& rules) {
@@ -129,6 +143,8 @@ public:
       double radius_change_speed,
       double arena_e) : Entity(position, radius, mass, velocity, radius_change_speed) {
     this->arena_e = arena_e;
+    this->is_robot = false;
+    this->is_ball = true;
   }
 
   static BallEntity from_ball(const Ball& ball, const Rules& rules) {
@@ -173,19 +189,23 @@ public:
 
 double collide_entities__random(double x, double y);
 
-void collide_entities(const Rules& rules, Entity& a, Entity& b);
+bool collide_entities(const Rules& rules, Entity& a, Entity& b);
 
 pair<bool, Vector3D> collide_with_arena(const Rules& rules, const Entity& e);
 
 void move_entity(const Rules& rules, Entity& e, const double delta_time);
 
 void update(const Rules& rules, const double delta_time, vector<RobotEntity>& robots, BallEntity& ball,
-    vector<NitroEntity>& nitros, GameState& game_state);
-
-void update_only_ball(const Rules& rules, const double delta_time, vector<RobotEntity>& robots, BallEntity& ball, vector<NitroEntity>& nitros, GameState& game_state);
+    vector<NitroEntity>& nitros, GameState& game_state,
+    bool register_collisions,
+    vector<CollideArena>collision_arena,
+    vector<CollideEntities> collision_entities);
 
 void tick(const Rules& rules, vector<RobotEntity>& robots, BallEntity& ball,
-    vector<NitroEntity>& nitros, GameState& game_state,double delta_time,bool microticks);
+    vector<NitroEntity>& nitros, GameState& game_state,double delta_time,bool microticks,
+    bool register_collisions,
+    vector<CollideArena>collision_arena,
+    vector<CollideEntities> collision_entities);
 
 class State {
 public:
@@ -220,7 +240,7 @@ public:
     if (dt == 0.0) {
       dt = 1.0 / rules.TICKS_PER_SECOND;
     }
-    tick(rules, robots, ball, nitros, game_state, dt, microticks);
+    tick(rules, robots, ball, nitros, game_state, dt, microticks, false, {}, {});
     // auto duration = steady_clock::now() - start;
     // double ms = duration_cast<nanoseconds>(duration).count() * 0.000001;
     // ms_sum += ms;
@@ -236,9 +256,9 @@ public:
     BallEntity ball = this->ball;
     vector<NitroEntity> nitros = this->nitros;
     GameState game_state2;
-    for (int  i = 1; i < 5; ++i) {
+    for (int  i = 1; i < 2; ++i) {
       double dt = 0.2;
-      update(rules, dt, robots, ball, nitros, game_state2);
+      //update(rules, dt, robots, ball, nitros, game_state2);
       if (game_state2.my_score || game_state2.enemy_score) {
         if (game_state2.my_score > 0) {
           win = true;
@@ -249,26 +269,13 @@ public:
         }
         break;
       }
-
-      stringstream ss;
-      ss << "  {"
-            "    \"Sphere\": {"
-            "      \"x\": " << ball.position.x << ","
-            "      \"y\": " << ball.position.y << ","
-            "      \"z\": " << ball.position.z << ","
-            "      \"radius\": 0.1,"
-            "      \"r\": 1.0,"
-            "      \"g\": 0.0,"
-            "      \"b\": 0.0,"
-            "      \"a\": 1.0"
-            "    }"
-            "  },";
-      //*debug_string += ss.str();
+      //debug_draw->push_back({ball.position.x, ball.position.y, ball.position.z, 0.1, 1, 0, 0, 1.0});
     }
     double ball_my_min_distance = 1000000;
     double ball_my_sum_distance = 0;
     double ball_enemy_min_distance = 1000000;
     double ball_enemy_sum_distance = 0;
+    double my_z_sum = 0;
     int my_touch = 0;
     int enemy_touch = 0;
     for (const RobotEntity& e : robots) {
@@ -286,6 +293,7 @@ public:
         if (ball_my_min_distance > dist) ball_my_min_distance = dist;
         if (e.touch) my_touch++;
         ball_my_sum_distance += dist;
+        my_z_sum += e.position.z;
       } else {
         if (ball_enemy_min_distance > dist) ball_enemy_min_distance = dist;
         if (e.touch) enemy_touch++;
@@ -333,21 +341,7 @@ public:
           }
           break;
         }
-
-        stringstream ss;
-        ss << "  {"
-              "    \"Sphere\": {"
-              "      \"x\": " << ball.position.x << ","
-              "      \"y\": " << ball.position.y << ","
-              "      \"z\": " << ball.position.z << ","
-              "      \"radius\": 0.1,"
-              "      \"r\": 1.0,"
-              "      \"g\": 0.0,"
-              "      \"b\": 0.0,"
-              "      \"a\": 1.0"
-              "    }"
-              "  },";
-        *debug_string += ss.str();
+        debug_draw->push_back({ball.position.x, ball.position.y, ball.position.z, 0.1, 1, 0, 0, 1.0});
       }
       double ball_my_min_distance = 1000000;
       double ball_my_sum_distance = 0;
@@ -461,34 +455,9 @@ public:
         float r = depth % 3 == 0 ? 1.0 : 0.0;
         float g = depth % 3 == 1 ? 1.0 : 0.0;
         float b = depth % 3 == 2 ? 1.0 : 0.0;
-        ss << "  {"
-              "    \"Sphere\": {"
-              "      \"x\": " << e.position.x << ","
-              "      \"y\": " << e.position.y << ","
-              "      \"z\": " << e.position.z << ","
-              "      \"radius\": 1.0,"
-              "      \"r\": " << r << ","
-              "      \"g\": " << g << ","
-              "      \"b\": " << b << ","
-              "      \"a\": 0.1"
-              "    }"
-              "  },";
-        *debug_string += ss.str();
+        debug_draw->push_back({e.position.x, e.position.y, e.position.z, 1.0, r, g, b, 0.1});
       }
-      stringstream ss;
-      ss << "  {"
-              "    \"Sphere\": {"
-              "      \"x\": " << state.ball.position.x << ","
-              "      \"y\": " << state.ball.position.y << ","
-              "      \"z\": " << state.ball.position.z << ","
-              "      \"radius\": 0.1,"
-              "      \"r\": 0.0,"
-              "      \"g\": 0.0,"
-              "      \"b\": 1.0,"
-              "      \"a\": 0.5"
-              "    }"
-              "  },";
-      //*debug_string += ss.str();
+      //debug_draw->push_back({state.ball.position.x, state.ball.position.y, state.ball.position.z, 0.1, 0, 0, 1, 0.5});
       id = new_id;
       for (const RobotEntity& e : state.robots) {
         if (e.id == id) {
@@ -530,8 +499,12 @@ public:
           a.target_velocity_x = x;
           a.target_velocity_z = z;
           actions.push_back(a);
-          //a.jump_speed = 15;
-          //actions.push_back(a);
+          if (is_teammate) {
+            // pass
+          } else {
+            a.jump_speed = 15;
+            actions.push_back(a);
+          }
         }
       }
     }
