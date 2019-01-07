@@ -469,8 +469,7 @@ public:
       state.robots[id - 1].action = action.action;
       int new_id = (id % state.robots.size()) + 1;
       // 0.004166666
-      double dt = action.playout ? 0.1 : 0.05;
-      // double dt = (action.playout ? 0.05 : 0.01) * (1.0 + sqrt(depth));
+      double dt = (action.playout ? 0.1 : 0.05) * (1.0 + sqrt(depth));
       state.simulate(dt, false);
       int depth = state.game_state.current_tick - initial_game_tick;
       if (is_teammate) {
