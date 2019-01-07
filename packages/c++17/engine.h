@@ -14,6 +14,7 @@
 #include "ofxMSAmcts.h"
 #include "const.h"
 #include <map>
+#include <math.h>
 
 #ifndef MYSTRATEGY_ENGINE_H
 #define MYSTRATEGY_ENGINE_H
@@ -252,8 +253,13 @@ public:
 
   // -1.0 .. 1.0
   double my_score() const {
-    bool win = false;
-    bool lose = false;
+    if (is_goal()) {
+      if (ball.position.z > 0) {
+        return 10000000;
+      } else {
+        return -10000000;
+      }
+    }
     double score = 0.0;
     vector<RobotEntity> robots = this->robots;
     BallEntity ball = this->ball;
@@ -264,11 +270,9 @@ public:
       //update(rules, dt, robots, ball, nitros, game_state2);
       if (game_state2.my_score || game_state2.enemy_score) {
         if (game_state2.my_score > 0) {
-          win = true;
-          score += 10000000.0 / i;
+          return 10000000;
         } else {
-          lose = true;
-          score -= 10000000.0 / i;
+          return -10000000;
         }
         break;
       }
@@ -466,6 +470,7 @@ public:
       int new_id = (id % state.robots.size()) + 1;
       // 0.004166666
       double dt = action.playout ? 0.1 : 0.05;
+      // double dt = (action.playout ? 0.05 : 0.01) * (1.0 + sqrt(depth));
       state.simulate(dt, false);
       int depth = state.game_state.current_tick - initial_game_tick;
       if (is_teammate) {
@@ -525,7 +530,17 @@ public:
       actions.clear();
       for (const RobotEntity& robot : state.robots) {
         if (robot.id == id) {
-          actions.push_back({robot.action});
+          if (robot.touch) {
+            actions.push_back({robot.action});
+          } else {
+            Action a;
+            a.target_velocity_x = 0.0;
+            a.target_velocity_z = 0.0;
+            a.target_velocity_y = -state.rules.MAX_ENTITY_SPEED;
+            a.jump_speed        = 0.0;
+            a.use_nitro         = true;
+            actions.push_back({a});
+          }
 
           if (robot.touch) {
             for (int x = -100; x <= 100; x += 100) {
