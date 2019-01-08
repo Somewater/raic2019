@@ -75,9 +75,9 @@ def run_processes_using_system(localrunner_cmd, player1_cmd, player2_cmd = None,
         if player2_cmd:
             player2_cmd += devnull
     if player2_cmd:
-        cmd = "(%s ) & (%s) & (%s)" % (localrunner_cmd, player1_cmd, player2_cmd)
+        cmd = " (sleep 2 && %s) & (sleep 2 && %s) & (%s )" % (player1_cmd, player2_cmd, localrunner_cmd)
     else:
-        cmd = "(%s ) & (%s)" % (localrunner_cmd, player1_cmd)
+        cmd = "(sleep 2 && %s) & (%s)" % (player1_cmd, localrunner_cmd)
     #print(cmd)
     os.system(cmd)
 
@@ -146,6 +146,7 @@ def get_commit_name(repo_filepath):
 if __name__ == '__main__':
     argparser = argparse.ArgumentParser(description='Game testing system CLI')
     argparser.add_argument('--tmp', default='/var/tmp/raic2018')
+    argparser.add_argument('--all_results', default='~/all_results.txt')
     argparser.add_argument('--p1', default='.')
     argparser.add_argument('--p2', default='')
     argparser.add_argument('--n1', default='')
@@ -157,6 +158,7 @@ if __name__ == '__main__':
     print('ARGS:', args)
 
     lock = LockFile(os.path.join(args.tmp, 'lock'))
+    all_results_filepath = args.all_results.replace('~', os.getenv('HOME')).rstrip('/')
 
     player1_root = args.p1.replace('~', os.getenv('HOME')).rstrip('/')
     if player1_root == '.':
@@ -184,10 +186,10 @@ if __name__ == '__main__':
         if result:
             r1, r2 = result
             with lock:
-                with open(os.path.join(args.tmp, 'results.txt'), 'a') as f:
-                    w = csv.writer(f)
-                    cols = [player1_name, r1, player2_name, r1]
-                    w.writerows([str(c) for c in cols])
+                with open(all_results_filepath, 'a') as f:
+                    w = csv.writer(f, delimiter='\t')
+                    cols = [player1_name, r1, player2_name, r2]
+                    w.writerow([str(c) for c in cols])
             score = 0
             if r1 > r2:
                 score = 1
