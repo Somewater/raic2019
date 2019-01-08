@@ -128,6 +128,19 @@ def confident(a, alpha=0.99):
     ci = [mean + critval * stddev / sqrt(len(a)) for critval in t_bounds]
     return (ci[0], ci[1])
 
+def get_commit_name(repo_filepath):
+    if not repo_filepath:
+        return
+    process = subprocess.Popen('git log -1 --pretty=%B'.split(), stdout=subprocess.PIPE, cwd=repo_filepath)
+    message = ''
+    for l in process.stdout.readlines():
+        l = l.decode('UTF-8').strip()
+        if len(l) > 0:
+            if message:
+                message += ' '
+            message += l
+    return message
+
 if __name__ == '__main__':
     argparser = argparse.ArgumentParser(description='Game testing system CLI')
     argparser.add_argument('--tmp', default='/var/tmp/raic2018')
@@ -147,8 +160,8 @@ if __name__ == '__main__':
     player2_root = args.p2.replace('~', os.getenv('HOME')).rstrip('/')
     if player2_root == '.':
         player2_root = root
-    player1_name = args.n1 or player1_root
-    player2_name = args.n2 or player2_root or '<helper>'
+    player1_name = args.n1 or get_commit_name(player1_root) or player1_root
+    player2_name = args.n2 or get_commit_name(player2_root) or player2_root or '<helper>'
     print('Players: %s VS %s' % (player1_name, player2_name))
 
     prepare_player(player1_root)
