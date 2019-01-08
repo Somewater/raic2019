@@ -537,7 +537,7 @@ public:
                     state.ball.position.distance_to(robot.position) <
                       (state.rules.BALL_RADIUS + state.rules.ROBOT_MAX_RADIUS)
                       && robot.position.y < state.ball.position.y;
-                if (jump || true) {
+                if (jump) {
                   a.jump_speed = 15;
                   actions.push_back({a});
                 }
