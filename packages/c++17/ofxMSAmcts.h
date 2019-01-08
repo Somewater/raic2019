@@ -62,7 +62,7 @@ namespace msa {
 
             //--------------------------------------------------------------
             // get best (immediate) child for given TreeNode based on uct score
-            TreeNode* get_best_uct_child(TreeNode* node, float uct_k) const {
+            TreeNode* get_best_uct_child(TreeNode* node) const {
                 // sanity check
                 if(!node->is_fully_expanded()) return NULL;
 
@@ -73,7 +73,7 @@ namespace msa {
                 int num_children = node->get_num_children();
                 for(int i = 0; i < num_children; i++) {
                     TreeNode* child = node->get_child(i);
-                    float uct_exploitation = (float)child->get_value() / (child->get_num_visits() + FLT_EPSILON);
+                    float uct_exploitation = (float)child->get_value().sum() / (child->get_num_visits() + FLT_EPSILON);
                     float uct_exploration = sqrt( log((float)node->get_num_visits() + 1) / (child->get_num_visits() + FLT_EPSILON) );
                     float uct_score = uct_exploitation + uct_k * uct_exploration;
 
@@ -85,6 +85,27 @@ namespace msa {
 
                 return best_node;
             }
+
+          TreeNode* get_best_child(TreeNode* node) const {
+              float best_utc_score = -std::numeric_limits<float>::max();
+              TreeNode* best_node = NULL;
+
+              // iterate all immediate children and find best UTC score
+              int num_children = node->get_num_children();
+              for(int i = 0; i < num_children; i++) {
+                  TreeNode* child = node->get_child(i);
+                  float uct_exploitation = (float)child->get_value().sum() / (child->get_num_visits() + FLT_EPSILON);
+                  float uct_exploration = sqrt( log((float)node->get_num_visits() + 1) / (child->get_num_visits() + FLT_EPSILON) );
+                  float uct_score = uct_exploitation;// + uct_k * uct_exploration;
+
+                  if(uct_score > best_utc_score) {
+                      best_utc_score = uct_score;
+                      best_node = child;
+                  }
+              }
+
+              return best_node;
+          }
 
 
             //--------------------------------------------------------------
@@ -126,7 +147,7 @@ namespace msa {
                     // 1. SELECT. Start at root, dig down into tree using UCT on all fully expanded nodes
                     TreeNode* node = &root_node;
                     while(!node->is_terminal() && node->is_fully_expanded()) {
-                        node = get_best_uct_child(node, uct_k);
+                        node = get_best_uct_child(node);
 //						assert(node);	// sanity check
                     }
 
@@ -149,19 +170,21 @@ namespace msa {
                     }
 
                     // get rewards vector for all agents
-                    const std::vector<float> rewards = state.evaluate();
+                    const std::vector<Evaluation> rewards = state.evaluate();
 
                     // add to history
                     if(explored_states) explored_states->push_back(state);
 
                     // 4. BACK PROPAGATION
+                    int depth = 0;
                     while(node) {
-                        node->update(rewards);
+                        node->update(rewards, depth);
                         node = node->get_parent();
+                        depth++;
                     }
 
                     // find most visited child
-                    best_node = get_most_visited_child(&root_node);
+                    best_node = get_best_child(&root_node);
 
                     // indicate end of loop for timer
                     timer.loop_end();
@@ -178,7 +201,7 @@ namespace msa {
                 if(best_node) {
                   std::stringstream ss;
                   //best_node->get_state().state.my_score(true);
-                  cout << "best_value=" << (best_node->get_value() / (best_node->get_num_visits() + FLT_EPSILON))
+                  cout << "best_value=" << (best_node->get_value().sum() / (best_node->get_num_visits() + FLT_EPSILON))
                     << ", during=" << timer.run_duration_millis()
                     << " ms, iterations=" << iterations << ", visits=" << best_node->get_num_visits() << ";" << endl;
                   return best_node->get_action();

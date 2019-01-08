@@ -12,9 +12,91 @@ Only contains information / methods related to State, Action, Parent, Children e
 #include <vector>
 #include <algorithm>
 #include <random>
+#include <ostream>
+#include <iostream>
 
 static std::random_device rd;
 static std::mt19937 g(rd());
+
+struct Evaluation {
+    double value;
+    double ball_my_min_distance = 0.0;
+    double ball_enemy_min_distance = 0.0;
+    double ball_my_sum_distance = 0.0;
+    double ball_enemy_sum_distance = 0.0;
+    double ball_position_z = 0.0;
+    double ball_position_x = 0.0;
+    double ball_velocity_z = 0.0;
+    int my_non_touch = 0;
+    int enemy_non_touch = 0;
+    std::vector<Evaluation> childs;
+
+    Evaluation(
+        double score,
+        double ball_my_min_distance,
+        double ball_enemy_min_distance,
+        double ball_my_sum_distance,
+        double ball_enemy_sum_distance,
+        double ball_position_z,
+        double ball_position_x,
+        double ball_velocity_z,
+        int my_non_touch,
+        int enemy_non_touch) :
+        ball_my_min_distance(ball_my_min_distance),
+        ball_enemy_min_distance(ball_enemy_min_distance),
+        ball_my_sum_distance(ball_my_sum_distance),
+        ball_enemy_sum_distance(ball_enemy_sum_distance),
+        ball_position_z(ball_position_z),
+        ball_position_x(ball_position_x),
+        ball_velocity_z(ball_velocity_z),
+        my_non_touch(my_non_touch),
+        enemy_non_touch(enemy_non_touch) {
+
+        score -= ball_my_min_distance * ball_my_min_distance * 0.02;
+        score += ball_enemy_min_distance * ball_enemy_min_distance * 0.02;
+        score -= ball_my_sum_distance * ball_my_sum_distance * 0.001;
+        score += ball_enemy_sum_distance * ball_enemy_sum_distance * 0.0005;
+        score += ball_position_z * 1;
+        score += (ball_position_z > 0 ? -1 : 1) * abs(ball_position_x) * 0.5;
+        score += ball_velocity_z * 0.1;
+        score -= my_non_touch * my_non_touch * my_non_touch;
+        score += enemy_non_touch * enemy_non_touch * enemy_non_touch;
+//        std::cout <<
+//            "SCORE: ball_my_min_distance=" << (ball_my_min_distance * ball_my_min_distance * 0.02) <<
+//            " ball_enemy_min_distance=" << (ball_enemy_min_distance * ball_enemy_min_distance * 0.02) <<
+//            " ball_my_sum_distance=" << (ball_my_sum_distance * ball_my_sum_distance * 0.001) <<
+//            " ball_enemy_sum_distance=" << (ball_enemy_sum_distance * ball_enemy_sum_distance * 0.0005) <<
+//            " ball_position_z=" << (ball_position_z * 1) <<
+//            " ball_position_x=" << ((ball_position_z > 0 ? -1 : 1) * abs(ball_position_x) * 0.5) <<
+//            " ball_velocity_z=" << (ball_velocity_z * 0.1) <<
+//            " my_non_touch=" << (my_non_touch * my_non_touch * my_non_touch) <<
+//            " enemy_non_touch=" << (enemy_non_touch * enemy_non_touch * enemy_non_touch) << std::endl;
+        value = score * 0.5 + 0.5;
+    }
+
+    Evaluation(double v) : value(v) {}
+
+    void add(Evaluation other) {
+        value += other.value;
+        childs.push_back(other);
+    }
+    bool less(Evaluation other) {
+        return value < other.value;
+    }
+    float sum() {
+        return value;
+    }
+
+    Evaluation negative() const {
+        return {-value};
+    }
+
+    static Evaluation empty() {
+        return {0};
+    }
+};
+
+std::ostream& operator<<(std::ostream& stream, const Evaluation& e);
 
 namespace msa {
     namespace mcts {
@@ -60,9 +142,9 @@ namespace msa {
             }
 
 
-            //--------------------------------------------------------------
-            void update(const std::vector<float>& rewards) {
-                this->value += rewards[agent_id];
+            // depth==0 - this node reward applied
+            void update(const std::vector<Evaluation>& rewards, int depth) {
+                this->value.add(rewards[agent_id]);
                 num_visits++;
             }
 
@@ -85,7 +167,7 @@ namespace msa {
             int get_num_visits() const { return num_visits; }
 
             // accumulated value (wins)
-            float get_value() const { return value; }
+            Evaluation get_value() const { return value; }
 
             // how deep the TreeNode is in the tree
             int get_depth() const { return depth; }
@@ -106,7 +188,7 @@ namespace msa {
             int agent_id;            // agent who made the decision
 
             int num_visits;            // number of times TreeNode has been visited
-            float value;            // value of this TreeNode
+            Evaluation value;            // value of this TreeNode
             int depth;
 
             std::vector< Ptr > children;    // all current children

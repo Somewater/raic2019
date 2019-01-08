@@ -252,12 +252,12 @@ public:
   }
 
   // -1.0 .. 1.0
-  double my_score() const {
+  Evaluation my_score() const {
     if (is_goal()) {
       if (ball.position.z > 0) {
-        return 10000000;
+        return {10000000};
       } else {
-        return -10000000;
+        return {-10000000};
       }
     }
     double score = 0.0;
@@ -270,9 +270,9 @@ public:
       //update(rules, dt, robots, ball, nitros, game_state2);
       if (game_state2.my_score || game_state2.enemy_score) {
         if (game_state2.my_score > 0) {
-          return 10000000;
+          return {10000000};
         } else {
-          return -10000000;
+          return {-10000000};
         }
         break;
       }
@@ -307,26 +307,16 @@ public:
         ball_enemy_sum_distance += dist;
       }
     }
-    //return ball.position.z / (rules.arena.depth * 0.5);
-
-    score -= ball_my_min_distance * ball_my_min_distance * 0.01;
-    score += ball_enemy_min_distance * ball_enemy_min_distance * 0.005;
-    score -= ball_my_sum_distance * ball_my_sum_distance * 0.001;
-    score += ball_enemy_sum_distance * ball_enemy_sum_distance * 0.0005;
-    score += ball.position.z * 1;
-    score += ball.velocity.z * 0.1;
-    score -= (robots.size() / 2 - my_touch) * 1; // TODO
-    score += (robots.size() / 2 - enemy_touch) * 1; // TODO
-//    cout << "SCORE: " <<
-//      (ball_my_min_distance * ball_my_min_distance * 0.01) << "," <<
-//      (ball_enemy_min_distance * ball_enemy_min_distance * 0.01) << "," <<
-//      (ball_my_sum_distance * ball_my_sum_distance * 0.001) << "," <<
-//      (ball_enemy_sum_distance * ball_enemy_sum_distance * 0.001) << "," <<
-//      (ball.position.z * 100) << "," <<
-//      (ball.velocity.z * 1) << "," <<
-//      (my_touch * 1) << "," <<
-//      (enemy_touch * 1) << endl;
-    return score;
+    return Evaluation(score,
+            ball_my_min_distance,
+            ball_enemy_min_distance,
+            ball_my_sum_distance,
+            ball_enemy_sum_distance,
+            ball.position.z,
+            ball.position.x,
+            ball.velocity.z,
+            robots.size() / 2 - my_touch,
+            robots.size() / 2 - enemy_touch);
   }
 
     double my_score2(bool debug = false) const {
@@ -447,10 +437,6 @@ struct StateEntry {
     bool is_teammate;
     Action action;
     StateEntry* prev;
-
-    double my_score() const {
-      return state.my_score();
-    }
 };
 
 struct McAction {
@@ -515,10 +501,9 @@ public:
       }
     }
 
-    const std::vector<float> evaluate() const {
-      // [-1:1] to [0:1]
-      float score_0_1 = state.my_score() * 0.5 + 0.5;
-      return {0, score_0_1, 1.0f - score_0_1};
+    const std::vector<Evaluation> evaluate() const {
+      Evaluation evaluation = state.my_score();
+      return {evaluation, evaluation, evaluation.negative()};
     }
 
     int agent_id() const {
@@ -552,7 +537,7 @@ public:
                     state.ball.position.distance_to(robot.position) <
                       (state.rules.BALL_RADIUS + state.rules.ROBOT_MAX_RADIUS)
                       && robot.position.y < state.ball.position.y;
-                if (jump) {
+                if (jump || true) {
                   a.jump_speed = 15;
                   actions.push_back({a});
                 }
@@ -599,32 +584,6 @@ private:
       uct.simulation_depth = UTC_SIMULATION_DEPTH;
 
       return uct.run(state).action;
-    }
-
-    StateEntry simulated_annealing(StateEntry instance, unsigned steps) {
-      StateEntry current(instance);
-      StateEntry best = current;
-
-      double temperature;
-
-      for (int k = 0; k <= steps; k++) {
-        temperature = 1.0 - ((double) k / steps);
-        double r = (double) std::rand() / RAND_MAX;
-
-        StateEntry next(instance); //(instance, current);
-
-        if (current.is_teammate ? next.my_score() < current.my_score() : next.my_score() > current.my_score()) {
-          current = next;
-        } else if (temperature > r) {
-          current = next;
-        }
-
-        if (current.my_score() > best.my_score()) {
-          best = current;
-        }
-      }
-
-      return best;
     }
 
   StateEntry current;
