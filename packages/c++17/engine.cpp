@@ -52,7 +52,7 @@ pair<bool, Vector3D> collide_with_arena(const Rules& rules, Entity& e) {
 }
 
 void move_entity(const Rules& rules, Entity& e, const double delta_time) {
-  e.velocity = clamp_vector(e.velocity, rules.MAX_ENTITY_SPEED);
+  e.velocity = e.velocity.clamp(rules.MAX_ENTITY_SPEED);
   e.position = e.position.add(e.velocity.mul(delta_time));
   e.position.y -= rules.GRAVITY * delta_time * delta_time / 2;
   e.velocity.y -= rules.GRAVITY * delta_time;
@@ -68,21 +68,21 @@ void update(const Rules& rules, const double delta_time, vector<RobotEntity>& ro
     Vector3D target_velocity = Vector3D(robot.action.target_velocity_x, robot.action.target_velocity_y,
                                         robot.action.target_velocity_z);
     if (robot.touch) {
-      target_velocity = target_velocity.min(rules.ROBOT_MAX_GROUND_SPEED);
+      target_velocity = target_velocity.clamp(rules.ROBOT_MAX_GROUND_SPEED);
       target_velocity = target_velocity.sub(robot.touch_normal.mul(robot.touch_normal.dot(target_velocity)));
       Vector3D target_velocity_change = target_velocity.sub(robot.velocity);
       if (target_velocity_change.len() > 0) {
         double acceleration = rules.ROBOT_ACCELERATION * max(0.0, robot.touch_normal.y);
         robot.velocity = robot.velocity.add(
-            (target_velocity_change.normalize().mul(acceleration * delta_time)).min(target_velocity_change.len()));
+            (target_velocity_change.normalize().mul(acceleration * delta_time)).clamp(target_velocity_change.len()));
       }
     }
     if (robot.action.use_nitro) {
-      Vector3D target_velocity_change = (target_velocity.sub(robot.velocity)).min(
+      Vector3D target_velocity_change = (target_velocity.sub(robot.velocity)).clamp(
           robot.nitro_amount * rules.NITRO_POINT_VELOCITY_CHANGE);
       if (target_velocity_change.len() > 0) {
         Vector3D acceleration = target_velocity_change.normalize().mul(rules.ROBOT_NITRO_ACCELERATION);
-        Vector3D velocity_change = (acceleration.mul(delta_time)).min(target_velocity_change.len());
+        Vector3D velocity_change = (acceleration.mul(delta_time)).clamp(target_velocity_change.len());
         robot.velocity = robot.velocity.add(velocity_change);
         robot.nitro_amount -= velocity_change.len() / rules.NITRO_POINT_VELOCITY_CHANGE;
       }
@@ -177,3 +177,35 @@ void tick(const Rules& rules, vector<RobotEntity>& robots, BallEntity& ball,
 
 double State::ms_sum = 0.0;
 int State::ms_count = 0;
+
+Action Engine::defend() {
+  const RobotEntity& me = this->me();
+
+  // Стратегия защитника (или атакующего, не нашедшего хорошего момента для удара):
+  // Будем стоять посередине наших ворот
+  Vector3D target_pos(0.0, 0, -(current.state.rules.arena.depth / 2.0) + current.state.rules.arena.bottom_radius);
+  // Причем, если мяч движется в сторону наших ворот
+  if (current.state.ball.velocity.z < DBL_EPSILON) {
+    // Найдем время и место, в котором мяч пересечет линию ворот
+    double t = (target_pos.z - current.state.ball.position.z) / current.state.ball.velocity.z;
+    double x = current.state.ball.position.x + current.state.ball.velocity.x * t;
+    // Если это место - внутри ворот
+    if (abs(x) < (current.state.rules.arena.goal_width / 2.0)) {
+      // То пойдем защищать его
+      target_pos.x = x;
+    }
+  }
+
+  // Установка нужных полей для желаемого действия
+  Vector3D target_velocity = target_pos.sub(me.position).mul(current.state.rules.ROBOT_MAX_GROUND_SPEED);
+  bool jump =
+      current.state.ball.position.distance_to(me.position) < (current.state.rules.BALL_RADIUS + current.state.rules.ROBOT_MAX_RADIUS)
+      && me.position.y < current.state.ball.position.y;
+
+  Action action;
+  action.target_velocity_x = target_velocity.x;
+  action.target_velocity_z = target_velocity.z;
+  action.target_velocity_y = 0.0;
+  action.jump_speed = jump ? current.state.rules.ROBOT_MAX_JUMP_SPEED : 0.0;
+  action.use_nitro = false;
+}

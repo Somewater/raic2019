@@ -14,8 +14,6 @@ struct Dan {
   Dan(double distance, const Vector3D& vector) : distance(distance), normal(vector) {}
 };
 
-Vector3D clamp_vector(Vector3D& vector, const double lenght);
-
 Dan min_dan(const Dan& v1, const Dan& v2);
 
 Dan dan_to_plane(const Vector3D& point, const Vector3D& point_on_plane, const Vector3D& plane_normal);

@@ -3,14 +3,6 @@
 
 using namespace std;
 
-Vector3D clamp_vector(Vector3D& vector, const double lenght) {
-  if (vector.len() <= lenght) {
-    return vector;
-  } else {
-    return vector.normalize().mul(lenght);
-  }
-}
-
 Dan min_dan(const Dan& v1, const Dan& v2) {
   if (v1.distance < v2.distance) {
     return v1;

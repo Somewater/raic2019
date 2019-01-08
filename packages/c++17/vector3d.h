@@ -16,15 +16,19 @@ struct Vector3D {
 
   Vector3D(double x, double y, double z) : x(x), y(y), z(z) {}
 
+  inline
   void set(double x_, double y_, double z_) { x = x_; y = y_; z = z_; }
 
+  inline
   double len() {
     if (_len < 0) _len = sqrt(x*x + y*y + z*z);
     return _len;
   }
 
+  inline
   double distance_to(const double x_, const double y_, const double z_) const { return sqrt((x-x_)*(x-x_) + (y-y_)*(y-y_) + (z-z_)*(z-z_)); }
 
+  inline
   double distance_to(const Vector3D& p) const { return distance_to(p.x, p.y, p.z); }
 
   //Vector3D operator+(Vector3D p) { return { x+p.x, z+p.z, y+p.y };}
@@ -37,16 +41,21 @@ struct Vector3D {
   //void operator*=(double val) { x *= val; z *= val; y *= val; }
 
 
+  inline
   double dot(const Vector3D& other) const {
     return x * other.x + y * other.y + z * other.z;
   }
 
-  Vector3D min(const double value) const {
-    return Vector3D((value < x ? value : x),
-                    (value < y ? value : y),
-                    (value < z ? value : z));
+  inline
+  Vector3D clamp(const double lenght) {
+    if (len() <= lenght) {
+      return {x, y, z};
+    } else {
+      return normalize().mul(lenght);
+    }
   }
 
+  inline
   Vector3D normalize() {
     if (x == 0 and y == 0 and z == 0) {
       return Vector3D(x ,y ,z);
@@ -56,6 +65,7 @@ struct Vector3D {
     }
   }
 
+  inline
   Vector3D plane() const {
     return Vector3D(x, 0, z);
   }

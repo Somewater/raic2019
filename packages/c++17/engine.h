@@ -573,6 +573,26 @@ public:
     return monte_carlo();
   }
 
+  bool is_defender() {
+    bool result = false;
+    const RobotEntity& me = this->me();
+    for (RobotEntity& e : current.state.robots) {
+      if (e.is_teammate && e.id != me.id && e.position.z < me.position.z) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  Action defend();
+
+  const RobotEntity& me() {
+    for (RobotEntity& e : current.state.robots)
+      if (e.id == current.id)
+        return e;
+    throw runtime_error("Me not found");
+  }
+
 private:
     Action monte_carlo() {
       McState state(current, current.id);
