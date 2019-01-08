@@ -188,7 +188,7 @@ if __name__ == '__main__':
             with lock:
                 with open(all_results_filepath, 'a') as f:
                     w = csv.writer(f, delimiter='\t')
-                    cols = [player1_name, r1, player2_name, r2]
+                    cols = [player1_name, payer1_commit or '', r1, player2_name, payer2_commit or '', r2]
                     w.writerow([str(c) for c in cols])
             score = 0
             if r1 > r2:
