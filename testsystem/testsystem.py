@@ -165,7 +165,6 @@ if __name__ == '__main__':
     player1_name = args.n1 or payer1_commit or player1_root
     player2_name = args.n2 or payer2_commit or player2_root or '<helper>'
     print('Players: %s (%s) VS %s (%s)' % (player1_name, payer1_commit, player2_name, payer2_commit))
-    sys.exit()
 
     prepare_player(player1_root)
     if player2_root and player2_root != player1_root:
