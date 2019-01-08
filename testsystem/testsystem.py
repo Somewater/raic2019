@@ -10,6 +10,8 @@ import time
 from scipy import stats
 import numpy as np
 from math import *
+from lockfile import LockFile
+import csv
 
 root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
@@ -154,6 +156,8 @@ if __name__ == '__main__':
     args = argparser.parse_args()
     print('ARGS:', args)
 
+    lock = LockFile(os.path.join(args.tmp, 'lock'))
+
     player1_root = args.p1.replace('~', os.getenv('HOME')).rstrip('/')
     if player1_root == '.':
         player1_root = root
@@ -179,6 +183,11 @@ if __name__ == '__main__':
         result = run_game(args.tmp, player1_root, player2_root, args.verbose)
         if result:
             r1, r2 = result
+            with lock:
+                with open(os.path.join(args.tmp, 'results.txt'), 'a') as f:
+                    w = csv.writer(f)
+                    cols = [player1_name, r1, player2_name, r1]
+                    w.writerows([str(c) for c in cols])
             score = 0
             if r1 > r2:
                 score = 1
