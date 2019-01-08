@@ -160,9 +160,12 @@ if __name__ == '__main__':
     player2_root = args.p2.replace('~', os.getenv('HOME')).rstrip('/')
     if player2_root == '.':
         player2_root = root
-    player1_name = args.n1 or get_commit_name(player1_root) or player1_root
-    player2_name = args.n2 or get_commit_name(player2_root) or player2_root or '<helper>'
-    print('Players: %s VS %s' % (player1_name, player2_name))
+    payer1_commit = get_commit_name(player1_root)
+    payer2_commit = get_commit_name(player2_root)
+    player1_name = args.n1 or payer1_commit or player1_root
+    player2_name = args.n2 or payer2_commit or player2_root or '<helper>'
+    print('Players: %s (%s) VS %s (%s)' % (player1_name, payer1_commit, player2_name, payer2_commit))
+    sys.exit()
 
     prepare_player(player1_root)
     if player2_root and player2_root != player1_root:
