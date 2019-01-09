@@ -73,6 +73,7 @@ public:
   double arena_e = 0;
   bool is_robot;
   bool is_ball;
+  bool is_defender = false;
 };
 
 struct CollideEntities {
@@ -282,6 +283,7 @@ public:
     double ball_my_sum_distance = 0;
     double ball_enemy_min_distance = 1000000;
     double ball_enemy_sum_distance = 0;
+    double defender_z_pos = -1000000;
     double my_z_sum = 0;
     int my_touch = 0;
     int enemy_touch = 0;
@@ -299,6 +301,7 @@ public:
       if (e.is_teammate) {
         if (ball_my_min_distance > dist) ball_my_min_distance = dist;
         if (e.touch) my_touch++;
+        if (e.is_defender) defender_z_pos = e.position.z;
         ball_my_sum_distance += dist;
         my_z_sum += e.position.z;
       } else {
@@ -316,7 +319,8 @@ public:
             ball.position.x,
             ball.velocity.z,
             robots.size() / 2 - my_touch,
-            robots.size() / 2 - enemy_touch);
+            robots.size() / 2 - enemy_touch,
+            defender_z_pos);
   }
 
     double my_score2(bool debug = false) const {
@@ -537,7 +541,7 @@ public:
                     state.ball.position.distance_to(robot.position) <
                       (state.rules.BALL_RADIUS + state.rules.ROBOT_MAX_RADIUS)
                       && robot.position.y < state.ball.position.y;
-                if (jump || true) {
+                if (!robot.is_defender || jump) {
                   a.jump_speed = 15;
                   actions.push_back({a});
                 }
@@ -573,20 +577,23 @@ public:
     return monte_carlo();
   }
 
-  bool is_defender() {
+  bool apply_defender() {
     bool result = false;
-    const RobotEntity& me = this->me();
+    RobotEntity& me = this->me();
     for (RobotEntity& e : current.state.robots) {
-      if (e.is_teammate && e.id != me.id && e.position.z < me.position.z) {
+      if (e.is_teammate && e.id != me.id && (
+            e.position.z <= me.position.z - 1 || (e.id < me.id && abs(e.position.z - me.position.z) < 1)
+          )) {
         return false;
       }
     }
+    me.is_defender = true;
     return true;
   }
 
   Action defend();
 
-  const RobotEntity& me() {
+  RobotEntity& me() {
     for (RobotEntity& e : current.state.robots)
       if (e.id == current.id)
         return e;
