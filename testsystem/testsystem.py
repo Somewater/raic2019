@@ -206,12 +206,12 @@ if __name__ == '__main__':
     args = argparser.parse_args()
     print('ARGS:', args)
 
-    if args.stat:
-        show_stat(args.all_results)
-        sys.exit(0)
-
     lock = LockFile(os.path.join(args.tmp, 'lock'))
     all_results_filepath = args.all_results.replace('~', os.getenv('HOME')).rstrip('/')
+
+    if args.stat:
+        show_stat(all_results_filepath)
+        sys.exit(0)
 
     player1_root = args.p1.replace('~', os.getenv('HOME')).rstrip('/')
     if player1_root == '.':
