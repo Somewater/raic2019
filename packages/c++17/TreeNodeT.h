@@ -55,15 +55,16 @@ struct Evaluation {
         enemy_non_touch(enemy_non_touch),
         defender_z_pos(defender_z_pos){
 
-        score -= ball_my_min_distance * ball_my_min_distance * 0.02;
-        score += ball_enemy_min_distance * ball_enemy_min_distance * 0.02;
+        score -= ball_my_min_distance * ball_my_min_distance * 0.01;
+        score += ball_enemy_min_distance * ball_enemy_min_distance * 0.005;
         score -= ball_my_sum_distance * ball_my_sum_distance * 0.001;
         score += ball_enemy_sum_distance * ball_enemy_sum_distance * 0.0005;
         score += ball_position_z * 1;
-        score += (ball_position_z > 0 ? -1 : 1) * abs(ball_position_x) * 0.5;
+        //score += (ball_position_z > 0 ? -1 : 1) * abs(ball_position_x) * 0.5;
         score += ball_velocity_z * 0.1;
-        score -= my_non_touch * my_non_touch * my_non_touch;
-        score += enemy_non_touch * enemy_non_touch * enemy_non_touch;
+        score -= my_non_touch * 10000000;
+        score -= my_non_touch;
+        score += enemy_non_touch;
         if (defender_z_pos > -15) {
           score -= pow(abs((-15 - defender_z_pos)), 3);
         }
