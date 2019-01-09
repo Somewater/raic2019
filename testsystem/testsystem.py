@@ -19,7 +19,7 @@ def is_alive(process):
     return process.poll() is None
 
 def prepare_player(player_root):
-    os.system('cd %s/packages/c++17 && cmake . && make' % player_root)
+    os.system('cd %s/packages/c++17 && cmake . >/dev/null 2>&1 && make >/dev/null 2>&1' % player_root)
 
 def run_processes_using_subprocess(localrunner_cmd, player1_cmd, player2_cmd = None, verbose: bool = True):
     localrunner_cmd = localrunner_cmd.replace('  ', ' ').split()
