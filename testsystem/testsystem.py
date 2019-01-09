@@ -12,6 +12,7 @@ import numpy as np
 from math import *
 from lockfile import LockFile
 import csv
+from collections import *
 
 root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
@@ -143,6 +144,53 @@ def get_commit_name(repo_filepath):
             message += l
     return message
 
+def show_stat(all_results_filepath):
+    c = defaultdict(list)
+    with open(all_results_filepath) as f:
+        for l in f:
+            n1, c1, r1, n2, c2, r2 = l.split('\t')
+            if n1 > n2:
+                n2, c2, r2, n1, c1, r1 = (n1, c1, r1, n2, c2, r2)
+            score = 0
+            if r1 > r2:
+                score = 1
+            else:
+                score = -1
+            c[(n1, n2)].append(score)
+    h = []
+    for key, vs in c.items():
+        r1, r2 = confident(vs)
+        n1, n2 = key
+        v = ' '
+        if r1 < 0 and r2 < 0:
+            v = '-'
+            h.append((n2, n1))
+        if r1 > 0 and r2 > 0:
+            v = '+'
+            h.append((n1, n2))
+        # print(v, key, (r1, r2), len(vs))
+    less_to_better = defaultdict(set)
+    for better, less in h:
+        less_to_better[less].add(better)
+    names = list(set([n for n1, n2 in h for n in [n1, n2]]))
+    changed = True
+    while changed:
+        changed = False
+        for i1, n1 in enumerate(names):
+            for i2, n2 in enumerate(names):
+                if n1 != n2:
+                    if n1 in less_to_better[n2] and i1 > i2:
+                        names[i1] = n2
+                        names[i2] = n1
+                        changed = True
+                        break
+            if changed:
+                break
+    print('From best to worst:')
+    for name in names:
+        print(' ', name)
+    return c
+
 if __name__ == '__main__':
     argparser = argparse.ArgumentParser(description='Game testing system CLI')
     argparser.add_argument('--tmp', default='/var/tmp/raic2018')
@@ -154,8 +202,13 @@ if __name__ == '__main__':
     argparser.add_argument('--verbose', action='store_true')
     argparser.add_argument('--retry', default='100')
     argparser.add_argument('--stat_exit', action='store_true')
+    argparser.add_argument('--stat', action='store_true')
     args = argparser.parse_args()
     print('ARGS:', args)
+
+    if args.stat:
+        show_stat(args.all_results)
+        sys.exit(0)
 
     lock = LockFile(os.path.join(args.tmp, 'lock'))
     all_results_filepath = args.all_results.replace('~', os.getenv('HOME')).rstrip('/')
