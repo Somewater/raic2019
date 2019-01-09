@@ -62,7 +62,6 @@ struct Evaluation {
         score += ball_position_z * 1;
         //score += (ball_position_z > 0 ? -1 : 1) * abs(ball_position_x) * 0.5;
         score += ball_velocity_z * 0.1;
-        score -= my_non_touch * 10000000;
         score -= my_non_touch;
         score += enemy_non_touch;
         if (defender_z_pos > -15) {
