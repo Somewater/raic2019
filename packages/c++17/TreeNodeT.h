@@ -29,7 +29,8 @@ struct Evaluation {
     double ball_velocity_z = 0.0;
     int my_non_touch = 0;
     int enemy_non_touch = 0;
-    std::vector<Evaluation> childs;
+    double defender_z_pos = 0.0;
+    //std::vector<Evaluation> childs;
 
     Evaluation(
         double score,
@@ -41,7 +42,8 @@ struct Evaluation {
         double ball_position_x,
         double ball_velocity_z,
         int my_non_touch,
-        int enemy_non_touch) :
+        int enemy_non_touch,
+        double defender_z_pos) :
         ball_my_min_distance(ball_my_min_distance),
         ball_enemy_min_distance(ball_enemy_min_distance),
         ball_my_sum_distance(ball_my_sum_distance),
@@ -50,7 +52,8 @@ struct Evaluation {
         ball_position_x(ball_position_x),
         ball_velocity_z(ball_velocity_z),
         my_non_touch(my_non_touch),
-        enemy_non_touch(enemy_non_touch) {
+        enemy_non_touch(enemy_non_touch),
+        defender_z_pos(defender_z_pos){
 
         score -= ball_my_min_distance * ball_my_min_distance * 0.02;
         score += ball_enemy_min_distance * ball_enemy_min_distance * 0.02;
@@ -61,6 +64,9 @@ struct Evaluation {
         score += ball_velocity_z * 0.1;
         score -= my_non_touch * my_non_touch * my_non_touch;
         score += enemy_non_touch * enemy_non_touch * enemy_non_touch;
+        if (defender_z_pos > -15) {
+          score -= pow(abs((-15 - defender_z_pos)), 3);
+        }
 //        std::cout <<
 //            "SCORE: ball_my_min_distance=" << (ball_my_min_distance * ball_my_min_distance * 0.02) <<
 //            " ball_enemy_min_distance=" << (ball_enemy_min_distance * ball_enemy_min_distance * 0.02) <<
@@ -78,7 +84,7 @@ struct Evaluation {
 
     void add(Evaluation other) {
         value += other.value;
-        childs.push_back(other);
+        //childs.push_back(other);
     }
     bool less(Evaluation other) {
         return value < other.value;

@@ -187,17 +187,22 @@ Action Engine::defend() {
   // Причем, если мяч движется в сторону наших ворот
   if (current.state.ball.velocity.z < DBL_EPSILON) {
     // Найдем время и место, в котором мяч пересечет линию ворот
-    double t = (target_pos.z - current.state.ball.position.z) / current.state.ball.velocity.z;
-    double x = current.state.ball.position.x + current.state.ball.velocity.x * t;
-    // Если это место - внутри ворот
-    if (abs(x) < (current.state.rules.arena.goal_width / 2.0)) {
-      // То пойдем защищать его
-      target_pos.x = x;
+    State state = current.state;
+    for (int i = 0; i < 100; ++i) {
+      state.simulate(0, false);
+      if (state.game_state.enemy_score > current.state.game_state.enemy_score) {
+        target_pos = state.ball.position;
+        stringstream ss;
+        ss << "GOAL: " << target_pos << "\\n";
+        debug_draw->push_back({target_pos.x, target_pos.y, target_pos.z, 2, 1, 0, 0, 0.9});
+        *debug_text += ss.str();
+        break;
+      }
     }
   }
 
   // Установка нужных полей для желаемого действия
-  Vector3D target_velocity = target_pos.sub(me.position).mul(current.state.rules.ROBOT_MAX_GROUND_SPEED);
+  Vector3D target_velocity = target_pos.plane().sub(me.position.plane()).clamp(current.state.rules.ROBOT_MAX_GROUND_SPEED);
   bool jump =
       current.state.ball.position.distance_to(me.position) < (current.state.rules.BALL_RADIUS + current.state.rules.ROBOT_MAX_RADIUS)
       && me.position.y < current.state.ball.position.y;
@@ -208,4 +213,6 @@ Action Engine::defend() {
   action.target_velocity_y = 0.0;
   action.jump_speed = jump ? current.state.rules.ROBOT_MAX_JUMP_SPEED : 0.0;
   action.use_nitro = false;
+
+  return action;
 }

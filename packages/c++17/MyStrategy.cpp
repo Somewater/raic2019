@@ -10,12 +10,12 @@ void show_state(State& state) {
   stringstream ss;
   for (RobotEntity& e : state.robots) {
     if (e.is_teammate) {
-      debug_draw->push_back({e.position.x, e.position.y, e.position.z, 1, 0, 1, 0, 0.5});
+      debug_draw->push_back({e.position.x, e.position.y, e.position.z, 1, 0, 1, 0, 0.1});
     } else {
-      debug_draw->push_back({e.position.x, e.position.y, e.position.z, 1, 1, 0, 0, 0.5});
+      debug_draw->push_back({e.position.x, e.position.y, e.position.z, 1, 1, 0, 0, 0.1});
     }
   }
-  debug_draw->push_back({state.ball.position.x, state.ball.position.y, state.ball.position.z, 2, 1, 1, 1, 0.5});
+  debug_draw->push_back({state.ball.position.x, state.ball.position.y, state.ball.position.z, 2, 1, 1, 1, 0.1});
 }
 
 void check_engine_correctness(const Robot& me, const Rules& rules, const Game& game, Action& action, map<int,HistoryItem>& history) {
@@ -81,8 +81,8 @@ void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Acti
   //check_engine_correctness(me, rules, game, action,history); return;
   //if (game.current_tick > 100) print_r1_r2_positions(me, rules, game, action);
   Engine engine(me, rules, game, history);
-  Action best = engine.find_best();
-  action = best;
+  engine.apply_defender();
+  action = engine.find_best();
   history[me.id] = {game.current_tick, action};
   return;
 
