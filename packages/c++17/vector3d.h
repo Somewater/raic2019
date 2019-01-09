@@ -51,7 +51,9 @@ struct Vector3D {
     if (len() <= lenght) {
       return {x, y, z};
     } else {
-      return normalize().mul(lenght);
+      // return normalize().mul(lenght);
+      double m = lenght / len();
+      return Vector3D(m * x, m * y, m * z);
     }
   }
 
@@ -68,6 +70,18 @@ struct Vector3D {
   inline
   Vector3D plane() const {
     return Vector3D(x, 0, z);
+  }
+
+  // this.add(other.mul(value))
+  inline
+  Vector3D addMul(const Vector3D& other, const double value) const {
+    return Vector3D(x + other.x * value, y + other.y * value, z + other.z * value);
+  }
+
+  // this.sub(other.mul(value))
+  inline
+  Vector3D subMul(const Vector3D& other, const double value) const {
+    return Vector3D(x - other.x * value, y - other.y * value, z - other.z * value);
   }
 
 private:

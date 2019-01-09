@@ -1,6 +1,7 @@
 #pragma once
 #include "vector3d.h"
 #include "model/Arena.h"
+#include "model/Action.h"
 
 using namespace std;
 using namespace model;
@@ -27,5 +28,7 @@ double clamp_float(const double value, const double minumum, const double maximu
 Dan dan_to_arena_quarter(const Arena& arena, const Vector3D& point);
 
 Dan dan_to_arena(const Arena& arena, const Vector3D& point0);
+
+bool equal(const Action& a1, const Action& a2);
 
 #endif //MYSTRATEGY_PREDEFINED_H

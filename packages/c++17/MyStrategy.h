@@ -68,7 +68,10 @@ public:
     }
     return false;
   }
+
+#ifdef MY_DEBUG
   std::string custom_rendering() override;
+#endif
   map<int, HistoryItem> history;
 };
 

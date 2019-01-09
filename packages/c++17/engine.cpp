@@ -10,6 +10,7 @@
 #include <vector>
 #include <algorithm>
 
+inline
 double collide_entities__random(double x, double y) {
   return min(x, y) + abs(x - y) * 0.5;
   double r = (double) std::rand() / RAND_MAX;
@@ -24,13 +25,14 @@ bool collide_entities(const Rules& rules, Entity& a, Entity& b) {
     double k_a = (1.0 / a.mass) / ((1.0 / a.mass) + (1.0 / b.mass));
     double k_b = (1.0 / b.mass) / ((1.0 / a.mass) + (1.0 / b.mass));
     Vector3D normal = delta_position.normalize();
-    a.position = a.position.sub(normal.mul(penetration * k_a));
-    b.position = b.position.add(normal.mul(penetration * k_b));
+    a.position = a.position.subMul(normal, penetration * k_a);
+    b.position = b.position.addMul(normal, penetration * k_b);
     double delta_velocity = normal.dot(b.velocity.sub(a.velocity)) - b.radius_change_speed - a.radius_change_speed;
     if (delta_velocity < 0) {
-      Vector3D impulse = normal.mul((1.0 + collide_entities__random(rules.MIN_HIT_E, rules.MAX_HIT_E)) * delta_velocity);
-      a.velocity = a.velocity.add(impulse.mul(k_a));
-      b.velocity = b.velocity.sub(impulse.mul(k_b));
+      double impulse_mul = (1.0 + collide_entities__random(rules.MIN_HIT_E, rules.MAX_HIT_E)) * delta_velocity;
+      // impulse = normal.mul(impulse_mul)
+      a.velocity = a.velocity.addMul(normal, k_a * impulse_mul);
+      b.velocity = b.velocity.subMul(normal, k_b * impulse_mul);
     }
     return true;
   }
@@ -41,19 +43,19 @@ pair<bool, Vector3D> collide_with_arena(const Rules& rules, Entity& e) {
   Dan dan = dan_to_arena(rules.arena, e.position);
   double penetration = e.radius - dan.distance;
   if (penetration > 0) {
-    e.position = e.position.add(dan.normal.mul(penetration));
+    e.position = e.position.addMul(dan.normal, penetration);
     double velocity = e.velocity.dot(dan.normal) - e.radius_change_speed;
     if (velocity < 0) {
-      e.velocity = e.velocity.sub(dan.normal.mul((1 + e.arena_e) * velocity));
-      return make_pair(true, dan.normal);
+      e.velocity = e.velocity.subMul(dan.normal, (1 + e.arena_e) * velocity);
+      return {true, dan.normal};
     }
   }
-  return make_pair(false, dan.normal);
+  return {false, dan.normal};
 }
 
 void move_entity(const Rules& rules, Entity& e, const double delta_time) {
   e.velocity = e.velocity.clamp(rules.MAX_ENTITY_SPEED);
-  e.position = e.position.add(e.velocity.mul(delta_time));
+  e.position = e.position.addMul(e.velocity, delta_time);
   e.position.y -= rules.GRAVITY * delta_time * delta_time / 2;
   e.velocity.y -= rules.GRAVITY * delta_time;
 }
@@ -69,7 +71,7 @@ void update(const Rules& rules, const double delta_time, vector<RobotEntity>& ro
                                         robot.action.target_velocity_z);
     if (robot.touch) {
       target_velocity = target_velocity.clamp(rules.ROBOT_MAX_GROUND_SPEED);
-      target_velocity = target_velocity.sub(robot.touch_normal.mul(robot.touch_normal.dot(target_velocity)));
+      target_velocity = target_velocity.subMul(robot.touch_normal, robot.touch_normal.dot(target_velocity));
       Vector3D target_velocity_change = target_velocity.sub(robot.velocity);
       if (target_velocity_change.len() > 0) {
         double acceleration = rules.ROBOT_ACCELERATION * max(0.0, robot.touch_normal.y);

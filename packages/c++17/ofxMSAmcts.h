@@ -73,7 +73,7 @@ namespace msa {
                 int num_children = node->get_num_children();
                 for(int i = 0; i < num_children; i++) {
                     TreeNode* child = node->get_child(i);
-                    float uct_exploitation = (float)child->get_value().sum() / (child->get_num_visits() + FLT_EPSILON);
+                    float uct_exploitation = (float)child->get_value() / (child->get_num_visits() + FLT_EPSILON);
                     float uct_exploration = sqrt( log((float)node->get_num_visits() + 1) / (child->get_num_visits() + FLT_EPSILON) );
                     float uct_score = uct_exploitation + uct_k * uct_exploration;
 
@@ -94,7 +94,7 @@ namespace msa {
               int num_children = node->get_num_children();
               for(int i = 0; i < num_children; i++) {
                   TreeNode* child = node->get_child(i);
-                  float uct_exploitation = (float)child->get_value().sum() / (child->get_num_visits() + FLT_EPSILON);
+                  float uct_exploitation = (float)child->get_value() / (child->get_num_visits() + FLT_EPSILON);
                   float uct_exploration = sqrt( log((float)node->get_num_visits() + 1) / (child->get_num_visits() + FLT_EPSILON) );
                   float uct_score = uct_exploitation;// + uct_k * uct_exploration;
 
@@ -201,9 +201,11 @@ namespace msa {
                 if(best_node) {
                   std::stringstream ss;
                   //best_node->get_state().state.my_score(true);
-                  cout << "best_value=" << (best_node->get_value().sum() / (best_node->get_num_visits() + FLT_EPSILON))
+#ifdef MY_DEBUG
+                  cout << "best_value=" << (best_node->get_value() / (best_node->get_num_visits() + FLT_EPSILON))
                     << ", during=" << timer.run_duration_millis()
                     << " ms, iterations=" << iterations << ", visits=" << best_node->get_num_visits() << ";" << endl;
+#endif
                   return best_node->get_action();
                 }
 

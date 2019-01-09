@@ -319,3 +319,11 @@ Dan dan_to_arena(const Arena& arena, const Vector3D& point0) {
   }
   return Dan(result_distance, result_normal);
 }
+
+bool equal(const Action& a1, const Action& a2) {
+  return a1.target_velocity_x == a2.target_velocity_x &&
+      a1.target_velocity_y == a2.target_velocity_y &&
+      a1.target_velocity_z == a2.target_velocity_z &&
+      a1.jump_speed == a2.jump_speed &&
+      a1.use_nitro == a2.use_nitro;
+}

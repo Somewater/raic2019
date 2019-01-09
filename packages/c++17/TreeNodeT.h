@@ -14,6 +14,7 @@ Only contains information / methods related to State, Action, Parent, Children e
 #include <random>
 #include <ostream>
 #include <iostream>
+#include "const.h"
 
 static std::random_device rd;
 static std::mt19937 g(rd());
@@ -122,6 +123,14 @@ namespace msa {
                 value(0),
                 depth(parent ? parent->depth + 1 : 0)
             {
+                children.reserve(MAX_ACTIONS);
+                actions.reserve(MAX_ACTIONS);
+            }
+
+            ~TreeNodeT(){
+              for (auto& c : children) {
+                delete c;
+              }
             }
 
 
@@ -173,7 +182,7 @@ namespace msa {
             int get_num_visits() const { return num_visits; }
 
             // accumulated value (wins)
-            Evaluation get_value() const { return value; }
+            float get_value() { return value.sum(); }
 
             // how deep the TreeNode is in the tree
             int get_depth() const { return depth; }
@@ -182,7 +191,7 @@ namespace msa {
             int get_num_children() const { return children.size(); }
 
             // get the i'th child
-            TreeNodeT* get_child(int i) const { return children[i].get(); }
+            TreeNodeT* get_child(int i) const { return children[i]; }
 
             // get parent
             TreeNodeT* get_parent() const { return parent; }
@@ -197,7 +206,7 @@ namespace msa {
             Evaluation value;            // value of this TreeNode
             int depth;
 
-            std::vector< Ptr > children;    // all current children
+            std::vector< TreeNodeT<State, Action>* > children;    // all current children
             std::vector< Action > actions;            // possible actions from this state
 
 
@@ -214,7 +223,7 @@ namespace msa {
                 child_node->state.apply_action(new_action);
 
                 // add to children
-                children.push_back(Ptr(child_node));
+                children.push_back(child_node);
 
                 return child_node;
             }

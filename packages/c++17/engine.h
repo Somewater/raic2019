@@ -15,6 +15,7 @@
 #include "const.h"
 #include <map>
 #include <math.h>
+#include "predefined.h"
 
 #ifndef MYSTRATEGY_ENGINE_H
 #define MYSTRATEGY_ENGINE_H
@@ -242,9 +243,12 @@ public:
     if (dt == 0.0) {
       dt = 1.0 / rules.TICKS_PER_SECOND;
     }
-    collision_arena.clear();
-    collision_entities.clear();
-    tick(rules, robots, ball, nitros, game_state, dt, microticks, true, collision_arena, collision_entities);
+    bool register_collisions = false;
+    if (register_collisions) {
+      collision_arena.clear();
+      collision_entities.clear();
+    }
+    tick(rules, robots, ball, nitros, game_state, dt, microticks, register_collisions, collision_arena, collision_entities);
     // auto duration = steady_clock::now() - start;
     // double ms = duration_cast<nanoseconds>(duration).count() * 0.000001;
     // ms_sum += ms;
@@ -262,23 +266,6 @@ public:
       }
     }
     double score = 0.0;
-    vector<RobotEntity> robots = this->robots;
-    BallEntity ball = this->ball;
-    vector<NitroEntity> nitros = this->nitros;
-    GameState game_state2;
-    for (int  i = 1; i < 2; ++i) {
-      double dt = 0.2;
-      //update(rules, dt, robots, ball, nitros, game_state2);
-      if (game_state2.my_score || game_state2.enemy_score) {
-        if (game_state2.my_score > 0) {
-          return {10000000};
-        } else {
-          return {-10000000};
-        }
-        break;
-      }
-      //debug_draw->push_back({ball.position.x, ball.position.y, ball.position.z, 0.1, 1, 0, 0, 1.0});
-    }
     double ball_my_min_distance = 1000000;
     double ball_my_sum_distance = 0;
     double ball_enemy_min_distance = 1000000;
@@ -323,89 +310,8 @@ public:
             defender_z_pos);
   }
 
-    double my_score2(bool debug = false) const {
-      bool win = false;
-      bool lose = false;
-      double score = 0.0;
-      vector<RobotEntity> robots = this->robots;
-      BallEntity ball = this->ball;
-      vector<NitroEntity> nitros = this->nitros;
-      GameState game_state2;
-      for (int  i = 1; i < 2; ++i) {
-        double dt = 1.0 / 60;
-        //update_only_ball(rules, dt, robots, ball, nitros, game_state2);
-        if (game_state2.my_score || game_state2.enemy_score) {
-          if (game_state2.my_score > 0) {
-            win = true;
-            score += 10000000.0; // / i;
-          } else {
-            lose = true;
-            score -= 10000000.0; // / i;
-          }
-          break;
-        }
-        debug_draw->push_back({ball.position.x, ball.position.y, ball.position.z, 0.1, 1, 0, 0, 1.0});
-      }
-      double ball_my_min_distance = 1000000;
-      double ball_my_sum_distance = 0;
-      double ball_enemy_min_distance = 1000000;
-      double ball_enemy_sum_distance = 0;
-      int my_touch = 0;
-      int enemy_touch = 0;
-      for (const RobotEntity& e : robots) {
-        bool ball_between_player_and_gates = e.is_teammate ?
-                                             e.position.z < ball.position.z - ball.radius - e.radius:
-                                             e.position.z > ball.position.z + ball.radius + e.radius;
-        double dist = e.position.plane().distance_to(ball.position.plane());
-        if (!ball_between_player_and_gates) {
-          dist *= 4;
-        }
-        if (!e.touch) {
-          dist += 5;
-        }
-        if (e.is_teammate) {
-          if (ball_my_min_distance > dist) ball_my_min_distance = dist;
-          if (e.touch) my_touch++;
-          ball_my_sum_distance += dist;
-        } else {
-          if (ball_enemy_min_distance > dist) ball_enemy_min_distance = dist;
-          if (e.touch) enemy_touch++;
-          ball_enemy_sum_distance += dist;
-        }
-      }
-      double my_gate_dist =  rules.arena.depth * 0.5 + ball.radius + ball.position.z;
-      double enemy_gate_dist = rules.arena.depth - my_gate_dist;
-
-      score -= ball_my_min_distance * ball_my_min_distance * 0.001;
-      score += ball_enemy_min_distance * ball_enemy_min_distance * 0.0001;
-      score -= ball_my_sum_distance * ball_my_sum_distance * 0.00005;
-      score += ball_enemy_sum_distance * ball_enemy_sum_distance * 0.00005;
-      score += -rules.arena.depth * 10.0 /(my_gate_dist*my_gate_dist) + rules.arena.depth * 10.0/(enemy_gate_dist*enemy_gate_dist);//ball.position.z * 0.1;
-      score += ball.velocity.z * 0.01;
-      score -= (2 - my_touch) * 10;
-      score -= enemy_touch * 1;
-      if (debug) {
-        cout << "SCORE: " <<
-             (ball_my_min_distance * ball_my_min_distance * 0.001) << "," <<
-             (ball_enemy_min_distance * ball_enemy_min_distance * 0.0001) << "," <<
-             (ball_my_sum_distance * ball_my_sum_distance * 0.00005) << "," <<
-             (ball_enemy_sum_distance * ball_enemy_sum_distance * 0.00005) << "," <<
-             (-rules.arena.depth * 10.0 /(my_gate_dist*my_gate_dist) + rules.arena.depth * 10.0/(enemy_gate_dist*enemy_gate_dist)) << "," <<
-             (ball.velocity.z * 0.01) << "," <<
-             ((2 - my_touch) * 10) << "," <<
-             (enemy_touch * 1)
-             << endl;
-      }
-      return score;
-    }
-
   bool is_goal() const {
     return abs(ball.position.z) > rules.arena.depth * 0.5 + ball.radius;
-  }
-
-
-  bool is_entity_collision() const {
-    return !collision_entities.empty();
   }
 
   State (const State &other) : rules(other.rules),
@@ -459,23 +365,29 @@ public:
       state.robots[id - 1].action = action.action;
       int new_id = (id % state.robots.size()) + 1;
       // 0.004166666
-      double dt = (action.playout ? 0.1 : 0.05) * (1.0 + sqrt(depth));
+      double dt = (action.playout ? 0.1 : 0.05) * (sqrt(1 + depth));
       state.simulate(dt, false);
-      int depth = state.game_state.current_tick - initial_game_tick;
-      if (is_teammate) {
+#ifdef MY_DEBUG
+      if (is_teammate && id == initial_id) {
         RobotEntity& e = state.robots[id - 1];
         stringstream ss;
         float r = depth % 3 == 0 ? 1.0 : 0.0;
         float g = depth % 3 == 1 ? 1.0 : 0.0;
         float b = depth % 3 == 2 ? 1.0 : 0.0;
+        //cout << "depth=" << depth << endl;
+        float a = 0.3;
         if (action.playout) {
           r = 1;
           g = 1;
           b = 0;
+          a = 0.1;
         }
-        debug_draw->push_back({e.position.x, e.position.y, e.position.z, 1.0, r, g, b, 0.1});
+        if (!action.playout) {
+          debug_draw->push_back({e.position.x, e.position.y, e.position.z, 1.0, r, g, b, a});
+          debug_draw->push_back({state.ball.position.x, state.ball.position.y, state.ball.position.z, 2.0, r, g, b, 0.1});
+        }
       }
-      //debug_draw->push_back({state.ball.position.x, state.ball.position.y, state.ball.position.z, 0.1, 0, 0, 1, 0.5});
+#endif
       id = new_id;
       if (new_id == initial_id) {
         depth++;
@@ -494,15 +406,40 @@ public:
     }
 
     bool get_random_action(McAction& action) const {
-      vector<McAction> actions;
-      get_actions(actions);
-      if (actions.empty()) {
-        return false;
-      } else {
-        action = actions[rand() % actions.size()];
-        action.playout = true;
-        return true;
+//      vector<McAction> actions;
+//      get_actions(actions);
+//      if (actions.empty()) {
+//        return false;
+//      } else {
+//        action = actions[rand() % actions.size()];
+//        action.playout = true;
+//        return true;
+//      }
+      for (const RobotEntity& robot : state.robots) {
+        if (robot.id == id) {
+
+          if (robot.touch) {
+            bool jump =
+                state.ball.position.distance_to(robot.position) <
+                (state.rules.BALL_RADIUS + state.rules.ROBOT_MAX_RADIUS)
+                && robot.position.y < state.ball.position.y;
+            int x = ((rand() % 3 == 0) - 1) * 100;
+            int z = ((rand() % 3 == 0) - 1) * 100;
+            action.action.target_velocity_x = x;
+            action.action.target_velocity_z = z;
+            action.action.jump_speed = (jump && rand() % 2 == 0 ? 15 : 0);
+          } else {
+            action.action.target_velocity_x = 0.0;
+            action.action.target_velocity_z = 0.0;
+            action.action.target_velocity_y = -state.rules.MAX_ENTITY_SPEED;
+            action.action.jump_speed        = 0.0;
+            action.action.use_nitro         = true;
+          }
+          action.playout = true;
+          return true;
+        }
       }
+      throw runtime_error("Robot not found");
     }
 
     const std::vector<Evaluation> evaluate() const {
@@ -516,19 +453,20 @@ public:
 
     void get_actions(std::vector<McAction>& actions) const  {
       actions.clear();
+      actions.reserve(MAX_ACTIONS);
       for (const RobotEntity& robot : state.robots) {
         if (robot.id == id) {
+          Action prev_action;
           if (robot.touch) {
-            actions.push_back({robot.action});
+            prev_action = robot.action;
           } else {
-            Action a;
-            a.target_velocity_x = 0.0;
-            a.target_velocity_z = 0.0;
-            a.target_velocity_y = -state.rules.MAX_ENTITY_SPEED;
-            a.jump_speed        = 0.0;
-            a.use_nitro         = true;
-            actions.push_back({a});
+            prev_action.target_velocity_x = 0.0;
+            prev_action.target_velocity_z = 0.0;
+            prev_action.target_velocity_y = -state.rules.MAX_ENTITY_SPEED;
+            prev_action.jump_speed        = 0.0;
+            prev_action.use_nitro         = true;
           }
+          actions.push_back({prev_action});
 
           if (robot.touch) {
             for (int x = -100; x <= 100; x += 100) {
@@ -536,14 +474,14 @@ public:
                 Action a;
                 a.target_velocity_x = x;
                 a.target_velocity_z = z;
-                actions.push_back({a});
+                if (!equal(a, prev_action)) actions.push_back({a});
                 bool jump =
                     state.ball.position.distance_to(robot.position) <
                       (state.rules.BALL_RADIUS + state.rules.ROBOT_MAX_RADIUS)
                       && robot.position.y < state.ball.position.y;
                 if (jump) {
                   a.jump_speed = 15;
-                  actions.push_back({a});
+                  if (!equal(a, prev_action)) actions.push_back({a});
                 }
               }
             }

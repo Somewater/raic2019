@@ -51,6 +51,7 @@ void check_engine_correctness(const Robot& me, const Rules& rules, const Game& g
   *debug_text += ss.str();
 }
 
+#ifdef MY_DEBUG
 string MyStrategy::custom_rendering() {
   stringstream ss;
   ss << "[";
@@ -71,6 +72,7 @@ string MyStrategy::custom_rendering() {
   ss << "{\"Text\":\"" + (*debug_text) + "\"}]";
   return ss.str();
 }
+#endif
 
 void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Action& action) {
   //if (use_prev_action(me, rules, game, action)) return;
@@ -81,7 +83,7 @@ void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Acti
   //check_engine_correctness(me, rules, game, action,history); return;
   //if (game.current_tick > 100) print_r1_r2_positions(me, rules, game, action);
   Engine engine(me, rules, game, history);
-  engine.apply_defender();
+  //engine.apply_defender();
   action = engine.find_best();
   history[me.id] = {game.current_tick, action};
   return;
