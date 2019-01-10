@@ -13,125 +13,25 @@ from math import *
 from lockfile import LockFile
 import csv
 from collections import *
+import requests
 
 root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
-def is_alive(process):
-    return process.poll() is None
+def create_host(my_token):
+    id = random.randint(0, 10000)
+    r = requests.post('https://api.hetzner.cloud/v1/servers',
+                      json={"name": "raic-%d" % id,
+                            "server_type": "cx11",
+                            "location": "nbg1",
+                            "start_after_create": True,
+                            "image": "ubuntu-18.04",
+                            "ssh_keys": ["pav@WPumb"],
+                            "automount": True},
+                      headers={'Authorization': 'Bearer %s' % my_token})
+    j = r.json()
+    return j['server']['public_net']['ipv4']['ip'], str(j['server']['id'])
 
-def prepare_player(player_root):
-    os.system('cd %s/packages/c++17 && cmake . >/dev/null 2>&1 && make >/dev/null 2>&1' % player_root)
-
-def run_processes_using_subprocess(localrunner_cmd, player1_cmd, player2_cmd = None, verbose: bool = True):
-    localrunner_cmd = localrunner_cmd.replace('  ', ' ').split()
-    player1_cmd = player1_cmd.split()
-    if player2_cmd:
-        player2_cmd = player2_cmd.split()
-
-    localrunner = subprocess.Popen(localrunner_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-    player1 = subprocess.Popen(player1_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-    player2 = None
-    if player2_cmd:
-        player2 = subprocess.Popen(player2_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-    processes = [('localrunner', localrunner), ('player1', player1)]
-    if player2:
-        processes.append(('player2', player2))
-    time.sleep(0.1)
-    start_time = time.time()
-    next_check_time = start_time
-    while True:
-        pcompleted = None
-        for name, process  in processes:
-            if not is_alive(process):
-                pcompleted = name
-                break
-        if pcompleted:
-            print('Run completed, process %s stopped' % pcompleted)
-            break
-
-        for name, process  in processes:
-            while True:
-                if verbose and process.stdout:
-                    line = process.stdout.readline().decode('UTF-8').rstrip()
-                    if line:
-                        print('[%s] %s' % (name, line))
-                    else:
-                        break
-                if process.stderr:
-                    line = process.stderr.readline().decode('UTF-8').rstrip()
-                    if line:
-                        print('[%s] %s' % (name, line), file=sys.stderr)
-                    else:
-                        break
-        if time.time() - next_check_time > 60:
-            print('Game duration %d seconds' % (time.time() - start_time))
-            next_check_time = time.time()
-        time.sleep(1)
-
-def run_processes_using_system(localrunner_cmd, player1_cmd, player2_cmd = None, verbose: bool = True):
-    if not verbose:
-        devnull = ' >/dev/null 2>&1'
-        localrunner_cmd += devnull
-        player1_cmd += devnull
-        if player2_cmd:
-            player2_cmd += devnull
-    if player2_cmd:
-        cmd = " (sleep 2 && %s) & (sleep 2 && %s) & (%s )" % (player1_cmd, player2_cmd, localrunner_cmd)
-    else:
-        cmd = "(sleep 2 && %s) & (%s)" % (player1_cmd, localrunner_cmd)
-    #print(cmd)
-    os.system(cmd)
-
-def run_game(tmp_filepath, player1_root, player2_root = None, verbose: bool = True) -> Tuple[int, int]:
-    uid = random.randint(0, 1000000)
-    result_filepath = os.path.join(tmp_filepath, 'result_%d.txt' % uid)
-    player1_port = 30000 + random.randint(1, 10000)
-    player2_port = 30000 + random.randint(1, 10000)
-    noshow = True
-    until_first_goal = True
-    flags = ''
-    if noshow:
-        flags += '--noshow '
-    if until_first_goal:
-        flags += '--until-first-goal '
-    localrunner_cmd = '%s/localrunner/codeball2018 --results-file=%s %s --p1=tcp-%d' % \
-                      (root, result_filepath, flags, player1_port)
-    localrunner_cmd = localrunner_cmd.replace('  ', ' ')
-    if player2_root:
-        localrunner_cmd += ' --p2=tcp-%d' % player2_port
-    player1_cmd = '%s/packages/c++17/MyStrategy localhost %d 0000000000000000' % (player1_root, player1_port)
-    player2_cmd = '%s/packages/c++17/MyStrategy localhost %d 0000000000000000' % (player2_root, player2_port) if player2_root else None
-
-    run_processes_using_system(localrunner_cmd, player1_cmd, player2_cmd, verbose)
-
-    if os.path.exists(result_filepath):
-        scores = []
-        with open(result_filepath) as f:
-            for l in f:
-                if ':' in l:
-                    score = int(l.split(':')[1])
-                    scores.append(score)
-                    if len(scores) == 2:
-                        break
-        if len(scores) == 2:
-            return (scores[0], scores[1])
-        else:
-            print('Unexpected result file format in %s:\n' % result_filepath)
-            with open(result_filepath) as f:
-                for l in f:
-                    print('>', l.strip())
-        os.unlink(result_filepath)
-    else:
-        print('Result file %s not found' % result_filepath)
-
-def confident(a, alpha=0.99):
-    mean = np.mean(a)
-    stddev = np.std(a, ddof=1)
-    t_bounds = stats.t.interval(alpha, len(a) - 1)
-    ci = [mean + critval * stddev / sqrt(len(a)) for critval in t_bounds]
-    return (ci[0], ci[1])
-
-def prepare_server(tmp_dir, host, c1, c2):
+def prepare_server(tmp_dir, host, c1, c2, my_token, server_id):
     tmp_file = os.path.join(tmp_dir, str(random.randint(1, 100000000)) + '.sh')
     cmd = """
 apt install python3-pip cmake make gcc g++ --yes
@@ -159,8 +59,8 @@ cd %s
 git checkout %s
 cd
 
-tmux new-session -c . -s "raic" -d \; send-keys 'cd && ./repo/testsystem/testsystem.py --p1=%s --p2=%s --server_result' C-m \;
-    """.strip() % (c1, c2, c1, c1, c1, c2, c2, c2, c1, c2)
+tmux new-session -c . -s "raic" -d \; send-keys 'cd && ./repo/testsystem/testsystem.py --p1=%s --p2=%s --server_result ; curl -XDELETE -H "Content-Type: application/json" -H "Authorization: Bearer %s" https://api.hetzner.cloud/v1/servers/%s' C-m \;
+    """.strip() % (c1, c2, c1, c1, c1, c2, c2, c2, c1, c2, my_token, server_id)
     with open(tmp_file, 'w') as f:
         f.write(cmd)
     os.system('scp -o "StrictHostKeyChecking no" %s root@116.203.55.35:~/setup.sh' % tmp_file)
@@ -169,7 +69,9 @@ tmux new-session -c . -s "raic" -d \; send-keys 'cd && ./repo/testsystem/testsys
 
 if __name__ == '__main__':
     argparser = argparse.ArgumentParser(description='Game testing system CLI')
-    argparser.add_argument('--host', required=True)
+    argparser.add_argument('--tmp', default='/var/tmp/raic2018')
+    argparser.add_argument('--host', default='')
+    argparser.add_argument('--server_id', default='')
     argparser.add_argument('--c1', required=True)
     argparser.add_argument('--c2', required=True)
     argparser.add_argument('--alpha', default='0.99')
@@ -178,20 +80,14 @@ if __name__ == '__main__':
     argparser.add_argument('--stat_exit', action='store_true')
     args = argparser.parse_args()
     print('ARGS:', args)
+    my_token = 'C5iJ0HYtZD6cIHVy15tbmaHVsovO7bcp7Isb0gc7u9vZNJ578bBlo6E2arm07Uur'
 
-    lock = LockFile(os.path.join(args.tmp, 'lock'))
-    all_results_filepath = args.all_results.replace('~', os.getenv('HOME')).rstrip('/')
-    alpha = float(args.alpha)
+    if args.host and args.server_id:
+        host, server_id = args.host, args.server_id
+    else:
+        print('Create hosu automatically')
+        host, server_id = create_host(my_token)
+        print('Host %s id=%s created' % (host, server_id))
 
-    player1_root = args.p1.replace('~', os.getenv('HOME')).rstrip('/')
-    if player1_root == '.':
-        player1_root = root
-    player2_root = args.p2.replace('~', os.getenv('HOME')).rstrip('/')
-    if player2_root == '.':
-        player2_root = root
-    payer1_commit = get_commit_name(player1_root)
-    payer2_commit = get_commit_name(player2_root)
-    player1_name = args.n1 or payer1_commit or player1_root
-    player2_name = args.n2 or payer2_commit or player2_root or '<helper>'
-    print('Players: %s (%s) VS %s (%s)' % (player1_name, payer1_commit, player2_name, payer2_commit))
+    prepare_server(args.tmp, host, args.c1, args.c2, my_token, server_id)
 
