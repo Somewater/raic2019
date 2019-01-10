@@ -168,7 +168,7 @@ def show_stat(all_results_filepath):
         if r1 > 0 and r2 > 0:
             v = '+'
             h.append((n1, n2))
-        # print(v, key, (r1, r2), len(vs))
+        print(v, key, (r1, r2), len(vs))
     less_to_better = defaultdict(set)
     for better, less in h:
         less_to_better[less].add(better)
