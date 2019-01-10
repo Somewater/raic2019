@@ -83,7 +83,7 @@ void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Acti
   //check_engine_correctness(me, rules, game, action,history); return;
   //if (game.current_tick > 100) print_r1_r2_positions(me, rules, game, action);
   Engine engine(me, rules, game, history);
-  //engine.apply_defender();
+  engine.apply_defender();
   action = engine.find_best();
   history[me.id] = {game.current_tick, action};
   return;
