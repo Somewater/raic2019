@@ -25,10 +25,10 @@ def create_host(my_token):
                             "location": "nbg1",
                             "start_after_create": True,
                             "image": "ubuntu-18.04",
-                            "ssh_keys": ["pav@WPumb"],
-                            "automount": True},
+                            "ssh_keys": ["pav@WPumb"]},
                       headers={'Authorization': 'Bearer %s' % my_token})
     j = r.json()
+    print('Host response: ', j)
     return j['server']['public_net']['ipv4']['ip'], str(j['server']['id'])
 
 def prepare_server(tmp_dir, host, c1, c2, my_token, server_id):
@@ -74,10 +74,6 @@ if __name__ == '__main__':
     argparser.add_argument('--server_id', default='')
     argparser.add_argument('--c1', required=True)
     argparser.add_argument('--c2', required=True)
-    argparser.add_argument('--alpha', default='0.99')
-    argparser.add_argument('--verbose', action='store_true')
-    argparser.add_argument('--retry', default='100')
-    argparser.add_argument('--stat_exit', action='store_true')
     args = argparser.parse_args()
     print('ARGS:', args)
     my_token = 'C5iJ0HYtZD6cIHVy15tbmaHVsovO7bcp7Isb0gc7u9vZNJ578bBlo6E2arm07Uur'
@@ -85,7 +81,7 @@ if __name__ == '__main__':
     if args.host and args.server_id:
         host, server_id = args.host, args.server_id
     else:
-        print('Create hosu automatically')
+        print('Create host automatically')
         host, server_id = create_host(my_token)
         print('Host %s id=%s created' % (host, server_id))
 
