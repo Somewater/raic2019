@@ -83,7 +83,7 @@ if __name__ == '__main__':
     else:
         print('Create host automatically')
         host, server_id = create_host(my_token)
-        print('Host %s id=%s created' % (host, server_id))
+        print('Host %s server_id=%s created' % (host, server_id))
 
     prepare_server(args.tmp, host, args.c1, args.c2, my_token, server_id)
 
