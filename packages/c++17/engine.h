@@ -365,7 +365,7 @@ public:
       state.robots[id - 1].action = action.action;
       int new_id = (id % state.robots.size()) + 1;
       // 0.004166666
-      double dt = (action.playout ? SIMULATION_PLAYOUT_DT : SIMULATION_DT) * (sqrt(1 + depth));
+      double dt = (action.playout ? SIMULATION_PLAYOUT_DT : SIMULATION_DT); // * (sqrt(1 + depth));
       state.simulate(dt, false);
 #ifdef MY_DEBUG
       if (is_teammate && id == initial_id) {
@@ -406,15 +406,16 @@ public:
     }
 
     bool get_random_action(McAction& action) const {
-//      vector<McAction> actions;
-//      get_actions(actions);
-//      if (actions.empty()) {
-//        return false;
-//      } else {
-//        action = actions[rand() % actions.size()];
-//        action.playout = true;
-//        return true;
-//      }
+      vector<McAction> actions;
+      actions.reserve(MAX_ACTIONS);
+      get_actions(actions);
+      if (actions.empty()) {
+        return false;
+      } else {
+        action = actions[rand() % actions.size()];
+        action.playout = true;
+        return true;
+      }
       for (const RobotEntity& robot : state.robots) {
         if (robot.id == id) {
 

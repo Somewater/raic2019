@@ -1,5 +1,6 @@
 #include "vector3d.h"
 #include "predefined.h"
+#include <float.h>
 
 using namespace std;
 
@@ -321,9 +322,9 @@ Dan dan_to_arena(const Arena& arena, const Vector3D& point0) {
 }
 
 bool equal(const Action& a1, const Action& a2) {
-  return a1.target_velocity_x == a2.target_velocity_x &&
-      a1.target_velocity_y == a2.target_velocity_y &&
-      a1.target_velocity_z == a2.target_velocity_z &&
-      a1.jump_speed == a2.jump_speed &&
+  return abs(a1.target_velocity_x - a2.target_velocity_x) < DBL_EPSILON &&
+      abs(a1.target_velocity_y - a2.target_velocity_y) < DBL_EPSILON &&
+      abs(a1.target_velocity_z - a2.target_velocity_z) < DBL_EPSILON &&
+      abs(a1.jump_speed - a2.jump_speed) < DBL_EPSILON &&
       a1.use_nitro == a2.use_nitro;
 }
