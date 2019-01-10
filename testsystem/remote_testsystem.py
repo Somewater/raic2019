@@ -61,10 +61,11 @@ cd
 
 tmux new-session -c . -s "raic" -d \; send-keys 'cd && ./repo/testsystem/testsystem.py --p1=%s --p2=%s --server_result ; curl -XDELETE -H "Content-Type: application/json" -H "Authorization: Bearer %s" https://api.hetzner.cloud/v1/servers/%s' C-m \;
     """.strip() % (c1, c2, c1, c1, c1, c2, c2, c2, c1, c2, my_token, server_id)
+    print(cmd)
     with open(tmp_file, 'w') as f:
         f.write(cmd)
-    os.system('scp -o "StrictHostKeyChecking no" %s root@116.203.55.35:~/setup.sh' % tmp_file)
-    os.system('ssh -o "StrictHostKeyChecking no" root@116.203.55.35 -c "chmod+x setup.sh && ./setup.sh"' % tmp_file)
+    os.system('scp -o "StrictHostKeyChecking no" %s root@%s:~/setup.sh' % (tmp_file, host))
+    os.system('ssh -o "StrictHostKeyChecking no" root@%s "chmod +x setup.sh && ./setup.sh"' % host)
     os.unlink(tmp_file)
 
 if __name__ == '__main__':
