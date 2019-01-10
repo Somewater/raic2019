@@ -365,7 +365,7 @@ public:
       state.robots[id - 1].action = action.action;
       int new_id = (id % state.robots.size()) + 1;
       // 0.004166666
-      double dt = (action.playout ? 0.1 : 0.05) * (sqrt(1 + depth));
+      double dt = (action.playout ? SIMULATION_PLAYOUT_DT : SIMULATION_DT) * (sqrt(1 + depth));
       state.simulate(dt, false);
 #ifdef MY_DEBUG
       if (is_teammate && id == initial_id) {
