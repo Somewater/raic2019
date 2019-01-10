@@ -13,9 +13,6 @@ from math import *
 from lockfile import LockFile
 import csv
 from collections import *
-import http.server
-import socketserver
-import requests
 
 root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
@@ -134,123 +131,57 @@ def confident(a, alpha=0.99):
     ci = [mean + critval * stddev / sqrt(len(a)) for critval in t_bounds]
     return (ci[0], ci[1])
 
-def get_commit_name(repo_filepath):
-    if not repo_filepath:
-        return
-    process = subprocess.Popen('git log -1 --pretty=%B'.split(), stdout=subprocess.PIPE, cwd=repo_filepath)
-    message = ''
-    for l in process.stdout.readlines():
-        l = l.decode('UTF-8').strip()
-        if len(l) > 0:
-            if message:
-                message += ' '
-            message += l
-    return message
+def prepare_server(tmp_dir, host, c1, c2):
+    tmp_file = os.path.join(tmp_dir, str(random.randint(1, 100000000)) + '.sh')
+    cmd = """
+apt install python3-pip cmake make gcc g++ --yes
+pip3 install lockfile scipy numpy requests
 
-def show_stat(all_results_filepath, alpha):
-    c = defaultdict(list)
-    with open(all_results_filepath) as f:
-        for l in f:
-            n1, c1, r1, n2, c2, r2 = l.split('\t')
-            if n1 > n2:
-                n2, c2, r2, n1, c1, r1 = (n1, c1, r1, n2, c2, r2)
-            score = 0
-            if r1 > r2:
-                score = 1
-            elif r1 < r2:
-                score = -1
-            c[(n1, n2)].append(score)
-    h = []
-    for key, vs in c.items():
-        r1, r2 = confident(vs, alpha)
-        n1, n2 = key
-        v = ' '
-        if r1 < 0 and r2 < 0:
-            v = '-'
-            h.append((n2, n1))
-        if r1 > 0 and r2 > 0:
-            v = '+'
-            h.append((n1, n2))
-        print(v, key, (r1, r2), len(vs))
-    less_to_better = defaultdict(set)
-    for better, less in h:
-        less_to_better[less].add(better)
-    names = list(set([n for n1, n2 in h for n in [n1, n2]]))
-    changed = True
-    while changed:
-        changed = False
-        for i1, n1 in enumerate(names):
-            for i2, n2 in enumerate(names):
-                if n1 != n2:
-                    if n1 in less_to_better[n2] and i1 > i2:
-                        names[i1] = n2
-                        names[i2] = n1
-                        changed = True
-                        break
-            if changed:
-                break
-    print('From best to worst:')
-    for name in names:
-        print(' ', name)
-    return c
+mkdir repo
+cd repo
+git init
+git pull https://somewater:Adelaida664@bitbucket.org/somewater/raic2018.git master
+git fetch https://somewater:Adelaida664@bitbucket.org/somewater/raic2018.git %s %s
 
-def server_daemon(all_results_filepath, lock):
-    class HandlerMy(http.server.BaseHTTPRequestHandler):
-        def handle_http(self, status_code):
-            self.send_response(status_code)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
+echo "load localrunner"
+wget http://russianaicup.ru/s/1546002449703/assets/local-runner/codeball2018-linux.tar.gz
+tar -xvf codeball2018-linux.tar.gz
+mv codeball2018-linux localrunner
+rm codeball2018-linux.tar.gz
+cd
 
-        def respond(self, text):
-            self.handle_http(200)
-            self.wfile.write(bytes(text, 'UTF-8'))
+git clone repo %s
+cd %s
+git checkout %s
+cd
+git clone repo %s
+cd %s
+git checkout %s
+cd
 
-        def do_GET(self):
-            self.respond('OK')
-
-        def do_POST(self):
-            text = self.rfile.read(int(self.headers['Content-Length'])).decode('UTF-8')
-            print('RESULT:', text)
-            lines_written = 0
-            with lock:
-                with open(all_results_filepath, 'a') as f:
-                    for line in text.strip().splitlines():
-                        f.write('%s\n' % line.strip())
-                        lines_written += 1
-            self.respond('%d lines written' % lines_written)
-
-
-    with socketserver.TCPServer(("0.0.0.0", 14526), HandlerMy) as httpd:
-        httpd.serve_forever()
+tmux new-session -c . -s "raic" -d \; send-keys 'cd && ./repo/testsystem/testsystem.py --p1=%s --p2=%s --server_result' C-m \;
+    """.strip() % (c1, c2, c1, c1, c1, c2, c2, c2, c1, c2)
+    with open(tmp_file, 'w') as f:
+        f.write(cmd)
+    os.system('scp -o "StrictHostKeyChecking no" %s root@116.203.55.35:~/setup.sh' % tmp_file)
+    os.system('ssh -o "StrictHostKeyChecking no" root@116.203.55.35 -c "chmod+x setup.sh && ./setup.sh"' % tmp_file)
+    os.unlink(tmp_file)
 
 if __name__ == '__main__':
     argparser = argparse.ArgumentParser(description='Game testing system CLI')
-    argparser.add_argument('--tmp', default='/var/tmp/raic2018')
-    argparser.add_argument('--all_results', default='~/all_results.txt')
-    argparser.add_argument('--p1', default='.')
-    argparser.add_argument('--p2', default='')
-    argparser.add_argument('--n1', default='')
-    argparser.add_argument('--n2', default='')
+    argparser.add_argument('--host', required=True)
+    argparser.add_argument('--c1', required=True)
+    argparser.add_argument('--c2', required=True)
     argparser.add_argument('--alpha', default='0.99')
     argparser.add_argument('--verbose', action='store_true')
     argparser.add_argument('--retry', default='100')
     argparser.add_argument('--stat_exit', action='store_true')
-    argparser.add_argument('--stat', action='store_true')
-    argparser.add_argument('--server_daemon', action='store_true')
-    argparser.add_argument('--server_result', action='store_true')
     args = argparser.parse_args()
     print('ARGS:', args)
 
     lock = LockFile(os.path.join(args.tmp, 'lock'))
     all_results_filepath = args.all_results.replace('~', os.getenv('HOME')).rstrip('/')
     alpha = float(args.alpha)
-
-    if args.server_daemon:
-        server_daemon(all_results_filepath + '_server.txt', lock)
-        sys.exit(0)
-    elif args.stat:
-        show_stat(all_results_filepath, alpha)
-        sys.exit(0)
 
     player1_root = args.p1.replace('~', os.getenv('HOME')).rstrip('/')
     if player1_root == '.':
@@ -264,43 +195,3 @@ if __name__ == '__main__':
     player2_name = args.n2 or payer2_commit or player2_root or '<helper>'
     print('Players: %s (%s) VS %s (%s)' % (player1_name, payer1_commit, player2_name, payer2_commit))
 
-    prepare_player(player1_root)
-    if player2_root and player2_root != player1_root:
-        prepare_player(player2_root)
-    print('Player startegies compiled')
-
-    if not os.path.exists(args.tmp):
-        os.mkdir(args.tmp)
-
-    scores = []
-    for i in range(int(args.retry)):
-        result = run_game(args.tmp, player1_root, player2_root, args.verbose)
-        if result:
-            r1, r2 = result
-            cols = [player1_name, payer1_commit or '', r1, player2_name, payer2_commit or '', r2]
-            cols = [str(c) for c in cols]
-            if args.server_result:
-                requests.post('http://atlantor.ru:14526', data="\t".join(cols))
-            else:
-                with lock:
-                    with open(all_results_filepath, 'a') as f:
-                        w = csv.writer(f, delimiter='\t')
-                        w.writerow(cols)
-            score = 0
-            if r1 > r2:
-                score = 1
-            elif r1 < r2:
-                score = -1
-            scores.append(score)
-            r1, r2 = confident([0] + scores, alpha)
-            print('%d. Run result: %s, score: %f, confidence: [%f : %f]' % (i, repr(result), score, r1, r2))
-            if r1 > 0:
-                print('p1 is better')
-                if args.stat_exit:
-                    sys.exit(0)
-            elif r2 < 0:
-                print('p2 is better')
-                if args.stat_exit:
-                    sys.exit(0)
-        else:
-            print('%d. Run result: %s' % (i, repr(result)))
