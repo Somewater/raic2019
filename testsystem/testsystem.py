@@ -154,7 +154,7 @@ def show_stat(all_results_filepath):
             score = 0
             if r1 > r2:
                 score = 1
-            else:
+            elif r1 < r2:
                 score = -1
             c[(n1, n2)].append(score)
     h = []
