@@ -144,7 +144,7 @@ def get_commit_name(repo_filepath):
             message += l
     return message
 
-def show_stat(all_results_filepath):
+def show_stat(all_results_filepath, alpha):
     c = defaultdict(list)
     with open(all_results_filepath) as f:
         for l in f:
@@ -159,7 +159,7 @@ def show_stat(all_results_filepath):
             c[(n1, n2)].append(score)
     h = []
     for key, vs in c.items():
-        r1, r2 = confident(vs)
+        r1, r2 = confident(vs, alpha)
         n1, n2 = key
         v = ' '
         if r1 < 0 and r2 < 0:
@@ -199,6 +199,7 @@ if __name__ == '__main__':
     argparser.add_argument('--p2', default='')
     argparser.add_argument('--n1', default='')
     argparser.add_argument('--n2', default='')
+    argparser.add_argument('--alpha', default='0.99')
     argparser.add_argument('--verbose', action='store_true')
     argparser.add_argument('--retry', default='100')
     argparser.add_argument('--stat_exit', action='store_true')
@@ -208,9 +209,10 @@ if __name__ == '__main__':
 
     lock = LockFile(os.path.join(args.tmp, 'lock'))
     all_results_filepath = args.all_results.replace('~', os.getenv('HOME')).rstrip('/')
+    alpha = float(args.alpha)
 
     if args.stat:
-        show_stat(all_results_filepath)
+        show_stat(all_results_filepath, alpha)
         sys.exit(0)
 
     player1_root = args.p1.replace('~', os.getenv('HOME')).rstrip('/')
@@ -249,7 +251,7 @@ if __name__ == '__main__':
             elif r1 < r2:
                 score = -1
             scores.append(score)
-            r1, r2 = confident([0] + scores)
+            r1, r2 = confident([0] + scores, alpha)
             print('%d. Run result: %s, score: %f, confidence: [%f : %f]' % (i, repr(result), score, r1, r2))
             if r1 > 0:
                 print('p1 is better')
