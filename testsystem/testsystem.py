@@ -181,7 +181,7 @@ def show_stat(all_results_filepath, alpha):
         changed = False
         for i1, n1 in enumerate(names):
             for i2, n2 in enumerate(names):
-                if n1 != n2:
+                if i1 != i2:
                     if n1 in less_to_better[n2] and i1 > i2:
                         names[i1] = n2
                         names[i2] = n1
