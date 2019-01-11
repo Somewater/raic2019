@@ -31,7 +31,7 @@ def create_host(my_token, server_type, git_branch):
     print('Host response: ', j)
     return j['server']['public_net']['ipv4']['ip'], str(j['server']['id'])
 
-def prepare_server(tmp_dir, host, my_token, server_id, commit_pairs_list, git_branch, retry: int = 0):
+def prepare_server(tmp_dir, host, my_token, server_id, commit_pairs_list, git_branch, retry: int = 0, auto_kill = False):
     run_flags = ''
     if retry:
         run_flags += '--retry %d ' % int(retry)
@@ -79,16 +79,16 @@ cd
         else:
             cmd += """\ntmux new-window\n"""
 
-        if is_first and is_last:
+        if is_first and is_last and auto_kill:
             cmd += ("""
 tmux send-keys 'cd && ./repo/testsystem/testsystem.py --p1=%s --p2=%s --server_result %s ; curl -XDELETE -H "Content-Type: application/json" -H "Authorization: Bearer %s" https://api.hetzner.cloud/v1/servers/%s' C-m \;
             """ % (c1, c2, run_flags, my_token, server_id))
         else:
             cmd += ("""
-tmux send-keys 'cd && ./repo/testsystem/testsystem.py --p1=%s --p2=%s --server_result' C-m \;
+tmux send-keys 'cd && ./repo/testsystem/testsystem.py --p1=%s --p2=%s --server_result %s' C-m \;
 echo "Started %s VS %s"
 sleep 5
-            """ % (c1, c2, c1, c2))
+            """ % (c1, c2, run_flags, c1, c2))
     print(cmd)
     with open(tmp_file, 'w') as f:
         f.write(cmd)
@@ -105,6 +105,7 @@ if __name__ == '__main__':
     argparser.add_argument('--commits', required=True)
     argparser.add_argument('--server_type', default='cx11')
     argparser.add_argument('--git_branch', default='master')
+    argparser.add_argument('--auto_kill', action='store_true')
     args = argparser.parse_args()
     print('ARGS:', args)
     my_token = 'C5iJ0HYtZD6cIHVy15tbmaHVsovO7bcp7Isb0gc7u9vZNJ578bBlo6E2arm07Uur'
@@ -127,5 +128,5 @@ if __name__ == '__main__':
         else:
             commits.append((commit, c))
             commit = None
-    prepare_server(args.tmp, host, my_token, server_id, commits, args.git_branch, args.retry)
+    prepare_server(args.tmp, host, my_token, server_id, commits, args.git_branch, args.retry, args.auto_kill)
 
