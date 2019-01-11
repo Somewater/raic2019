@@ -31,7 +31,10 @@ def create_host(my_token, server_type, git_branch):
     print('Host response: ', j)
     return j['server']['public_net']['ipv4']['ip'], str(j['server']['id'])
 
-def prepare_server(tmp_dir, host, my_token, server_id, commit_pairs_list):
+def prepare_server(tmp_dir, host, my_token, server_id, commit_pairs_list, git_branch, retry: int = 0):
+    run_flags = ''
+    if retry:
+        run_flags += '--retry %d ' % int(retry)
     tmp_file = os.path.join(tmp_dir, str(random.randint(1, 100000000)) + '.sh')
     cmd = """
 apt update
@@ -72,14 +75,14 @@ cd
         is_first = i == 0
         is_last = i == len(commit_pairs_list) - 1
         if is_first:
-            cmd += """\ntmux kill-session\ntmux new-session -c . -s "raic" -d\n"""
+            cmd += """\ntmux new-session -c . -s "raic" -d\n"""
         else:
             cmd += """\ntmux new-window\n"""
 
         if is_first and is_last:
             cmd += ("""
-tmux send-keys 'cd && ./repo/testsystem/testsystem.py --p1=%s --p2=%s --server_result ; curl -XDELETE -H "Content-Type: application/json" -H "Authorization: Bearer %s" https://api.hetzner.cloud/v1/servers/%s' C-m \;
-            """ % (c1, c2, my_token, server_id))
+tmux send-keys 'cd && ./repo/testsystem/testsystem.py --p1=%s --p2=%s --server_result %s ; curl -XDELETE -H "Content-Type: application/json" -H "Authorization: Bearer %s" https://api.hetzner.cloud/v1/servers/%s' C-m \;
+            """ % (c1, c2, run_flags, my_token, server_id))
         else:
             cmd += ("""
 tmux send-keys 'cd && ./repo/testsystem/testsystem.py --p1=%s --p2=%s --server_result' C-m \;
@@ -98,13 +101,16 @@ if __name__ == '__main__':
     argparser.add_argument('--tmp', default='/var/tmp/raic2018')
     argparser.add_argument('--host', default='')
     argparser.add_argument('--server_id', default='')
+    argparser.add_argument('--retry', default='')
     argparser.add_argument('--commits', required=True)
-    argparser.add_argument('--server_type', 'cx11')
-    argparser.add_argument('--git_branch', 'master')
+    argparser.add_argument('--server_type', default='cx11')
+    argparser.add_argument('--git_branch', default='master')
     args = argparser.parse_args()
     print('ARGS:', args)
     my_token = 'C5iJ0HYtZD6cIHVy15tbmaHVsovO7bcp7Isb0gc7u9vZNJ578bBlo6E2arm07Uur'
 
+    if not os.path.exists(args.tmp):
+        os.mkdir(args.tmp)
     if args.host and args.server_id:
         host, server_id = args.host, args.server_id
     else:
@@ -121,5 +127,5 @@ if __name__ == '__main__':
         else:
             commits.append((commit, c))
             commit = None
-    prepare_server(args.tmp, host, my_token, server_id, commits)
+    prepare_server(args.tmp, host, my_token, server_id, commits, args.git_branch, args.retry)
 
