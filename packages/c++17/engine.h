@@ -357,7 +357,12 @@ public:
     }
 
     void apply_action(const McAction& action) {
-      state.robots[id - 1].action = action.action;
+      for (RobotEntity& r : state.robots) {
+        if (r.id == id) {
+          r.action = action.action;
+          break;
+        }
+      }
       int new_id = (id % state.robots.size()) + 1;
       // 0.004166666
       double dt = (action.playout ? SIMULATION_PLAYOUT_DT : SIMULATION_DT); // * (sqrt(1 + depth));
