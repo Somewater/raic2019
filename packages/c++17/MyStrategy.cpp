@@ -105,6 +105,7 @@ void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Acti
 }
 
 ostream& operator<<(ostream& stream, const model::Action& a) {
-  stream << "(" << a.target_velocity_x << "," << a.target_velocity_y << "," << a.target_velocity_z << ")";
+  stream << "vx=" << a.target_velocity_x << " vy=" << a.target_velocity_y << " vz=" << a.target_velocity_z
+    << " j=" << a.jump_speed;
   return stream;
 }

@@ -45,19 +45,39 @@ bool is_best_node_or_parent(msa::mcts::TreeNodeT<State, McAction>* best_node,
 }
 
 template <class State>
+bool is_teammate_by_initial_id(msa::mcts::TreeNodeT<State, McAction>& node) {
+  int id = node.get_state().initial_id;
+  for (const auto& r : node.get_state().state.robots) {
+    if (r.id == id) {
+      return r.is_teammate;
+    }
+  }
+  throw runtime_error("Robot not found");
+}
+
+template <class State>
 void debug_print_tree(msa::mcts::TreeNodeT<State, McAction>& node,
     msa::mcts::TreeNodeT<State, McAction>* best_node = NULL) {
   string indent;
   for (int i = 0; i < node.get_depth(); ++i) indent += "   ";
 
   auto& action = node.get_action().action;
+  float uct_exploitation = (float)node.get_value() / (node.get_num_visits() + FLT_EPSILON);
+  float uct_exploration = sqrt( log((float)(
+         node.get_parent() ? node.get_parent()->get_num_visits() : node.get_num_visits()
+      ) + 1) / (node.get_num_visits() + FLT_EPSILON) );
+  float uct_score = uct_exploitation + UCT_K * uct_exploration;
+
   cout << "|" << indent << node.get_depth() << "."
     << (is_best_node_or_parent(best_node, &node) ? "*" : " ")
-    << "[id=" << node.get_state().id
-    << " is_teammate=" << node.get_state().is_teammate
+    << "[id=" << node.get_state().initial_id
+    << " is_teammate=" << is_teammate_by_initial_id(node)
     << " me_id=" << node.get_state().me_id
-    << " val+viz=" << node.get_value() << "+" << node.get_num_visits()
-    << " act=" << action << "]" << "\n";
+    << " value=" << uct_exploitation
+    << " exploration=" << uct_exploration
+    << " uct=" << uct_score
+    << " visits=" << node.get_num_visits()
+    << action << "]" << "\n";
 
   for (int i = 0; i < node.get_num_children(); ++i) {
     debug_print_tree(*node.get_child(i), best_node);
@@ -244,10 +264,10 @@ namespace msa {
                 }
 
                 // find most visited child
-                best_node = get_best_child(&root_node);
+                best_node = get_best_child(&root_node); // TODO: get_most_visited_child, get_best_uct_child ?
 
 #ifdef MY_DEBUG
-                //debug_print_tree(root_node, best_node);
+                debug_print_tree(root_node, best_node);
 #endif
 
                 // return best node's action
