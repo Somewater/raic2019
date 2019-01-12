@@ -349,15 +349,10 @@ struct StateEntry {
     StateEntry* prev;
 };
 
-struct McAction {
-  Action action;
-  bool playout = false;
-};
-
 class McState {
 public:
-    McState(StateEntry e, int initial_id) : state(e.state), id(e.id), is_teammate(e.is_teammate),
-    initial_id(initial_id), initial_game_tick(e.state.game_state.current_tick), depth(0), ticks(0) {
+    McState(StateEntry e, int me_id) : state(e.state), id(e.id), is_teammate(e.is_teammate),
+    me_id(me_id), initial_game_tick(e.state.game_state.current_tick), depth(0), ticks(0) {
 
     }
 
@@ -368,7 +363,7 @@ public:
       double dt = (action.playout ? SIMULATION_PLAYOUT_DT : SIMULATION_DT); // * (sqrt(1 + depth));
       state.simulate(dt, false);
 #ifdef MY_DEBUG
-      if (is_teammate && id == initial_id) {
+      if (is_teammate && id == me_id) {
         RobotEntity& e = state.robots[id - 1];
         stringstream ss;
         float r = depth % 3 == 0 ? 1.0 : 0.0;
@@ -389,7 +384,7 @@ public:
       }
 #endif
       id = new_id;
-      if (new_id == initial_id) {
+      if (new_id == me_id) {
         depth++;
       }
       ticks++;
@@ -496,7 +491,7 @@ public:
     State state;
     int id;
     bool is_teammate;
-    int initial_id;
+    int me_id;
     int initial_game_tick;
     int depth; // in real ticks
     int ticks;

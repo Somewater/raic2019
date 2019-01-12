@@ -103,3 +103,8 @@ void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Acti
      << ms_count << " ticks" << endl;
   }
 }
+
+ostream& operator<<(ostream& stream, const model::Action& a) {
+  stream << "(" << a.target_velocity_x << "," << a.target_velocity_y << "," << a.target_velocity_z << ")";
+  return stream;
+}

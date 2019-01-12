@@ -10,6 +10,7 @@ MCTS Code Based on the Java (Simon Lucas - University of Essex) and Python (Pete
 #include "MSALoopTimer.h"
 #include <cfloat>
 #include <sstream>
+#include "model/Action.h"
 
 struct DrawSphere {
   double x, y, z;
@@ -21,6 +22,45 @@ extern std::vector<DrawSphere>* debug_draw;
 extern std::string* debug_text;
 
 using namespace std;
+
+struct McAction {
+  model::Action action;
+  bool playout = false;
+};
+
+ostream& operator<<(ostream& stream, const model::Action& a);
+
+template <class State>
+bool is_best_node_or_parent(msa::mcts::TreeNodeT<State, McAction>* best_node,
+    const msa::mcts::TreeNodeT<State, McAction>* node) {
+  msa::mcts::TreeNodeT<State, McAction>* n = best_node;
+  while (n) {
+    if (n == node) {
+      return true;
+    }
+    n = n->get_parent();
+  }
+  return false;
+}
+
+template <class State>
+void debug_print_tree(msa::mcts::TreeNodeT<State, McAction>& node, msa::mcts::TreeNodeT<State, McAction>* best_node) {
+  string indent;
+  for (int i = 0; i < node.get_depth(); ++i) indent += "   ";
+
+  auto& action = node.get_action().action;
+  cout << "|" << indent << node.get_depth() << "."
+    << (is_best_node_or_parent(best_node, &node) ? "*" : " ")
+    << "[id=" << node.get_state().id
+    << " is_teammate=" << node.get_state().is_teammate
+    << " me_id=" << node.get_state().me_id
+    << " val+viz=" << node.get_value() << "+" << node.get_num_visits()
+    << " act=" << action << "]" << "\n";
+
+  for (int i = 0; i < node.get_num_children(); ++i) {
+    debug_print_tree(*node.get_child(i), best_node);
+  }
+}
 
 namespace msa {
     namespace mcts {
@@ -196,6 +236,10 @@ namespace msa {
                     if(max_iterations > 0 && iterations > max_iterations) break;
                     iterations++;
                 }
+
+#ifdef MY_DEBUG
+                //debug_print_tree(root_node, best_node);
+#endif
 
                 // return best node's action
                 if(best_node) {
