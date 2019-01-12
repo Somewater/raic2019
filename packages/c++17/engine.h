@@ -213,6 +213,7 @@ void tick(const Rules& rules, vector<RobotEntity>& robots, BallEntity& ball,
 class State {
 public:
   State(const int me, const Rules& rules, const Game& game, const map<int, HistoryItem>& history) :
+  me_id(me),
   rules(rules),
   ball( BallEntity::from_ball(game.ball, rules)) {
     game_state = GameState::from_game(game);
@@ -314,24 +315,19 @@ public:
     return abs(ball.position.z) > rules.arena.depth * 0.5 + ball.radius;
   }
 
-  State (const State &other) : rules(other.rules),
+  State (const State &other) : me_id(other.me_id),
+                               rules(other.rules),
                                game_state(other.game_state),
                                robots(other.robots),
                                ball(other.ball),
                                nitros(other.nitros) {}
 
-  State& operator=(const State& other) {
-    //this->rules = other.rules;
-    this->game_state = other.game_state;
-    this->robots = other.robots;
-    this->ball = other.ball;
-    this->nitros = other.nitros;
-    return *this;
-  }
+  State& operator=(const State& other) = delete;
 
   static double ms_sum;
   static int ms_count;
 
+  const int me_id;
   const Rules& rules;
   GameState game_state;
   vector<RobotEntity> robots;
@@ -351,26 +347,21 @@ struct StateEntry {
 
 class McState {
 public:
-    McState(State state, int me_id, int id) :
+    McState(State state, int id) :
       state(state),
-      me_id(me_id),
       id(id),
       initial_id(id),
       ticks(0) {
-      for (RobotEntity& r : state.robots) {
-        if (r.id == id) {
-          is_teammate = r.is_teammate;
-          break;
-        }
-      }
+      actualize_teammate_flag();
     }
 
     McState(const McState &ms) :
       state(ms.state),
-      me_id(ms.me_id),
       id(ms.id),
       initial_id(ms.id),
-      ticks(ms.ticks) {}
+      ticks(ms.ticks) {
+      actualize_teammate_flag();
+    }
 
 
     void apply_action(const McAction& action) {
@@ -384,7 +375,7 @@ public:
       double dt = (action.playout ? SIMULATION_PLAYOUT_DT : SIMULATION_DT); // * (sqrt(1 + depth));
       state.simulate(dt, false);
 #ifdef MY_DEBUG
-      if (is_teammate && id == me_id) {
+      if (is_teammate && id == state.me_id) {
         RobotEntity* e;
         for (RobotEntity& r : state.robots) {
           if (r.id == id) {
@@ -411,6 +402,10 @@ public:
 #endif
       id = (id % state.robots.size()) + 1;
       ticks++;
+      actualize_teammate_flag();
+    }
+
+    void actualize_teammate_flag() {
       for (const RobotEntity& e : state.robots) {
         if (e.id == id) {
           is_teammate = e.is_teammate;
@@ -517,11 +512,10 @@ public:
     }
 
     bool its_me() const {
-      return initial_id == me_id;
+      return initial_id == state.me_id;
     }
 
     State state;
-    int me_id;
     int id;
     int initial_id = -1;
     bool is_teammate;
@@ -536,7 +530,7 @@ public:
 class Engine {
 public:
   Engine(const Robot& me, const Rules& rules, const Game& game, const map<int, HistoryItem>& history) :
-  current{State(me.id, rules, game, history), me.id, me.id} {}
+  current{State(me.id, rules, game, history), me.id} {}
 
   Action find_best() {
     return monte_carlo();
