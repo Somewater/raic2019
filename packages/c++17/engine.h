@@ -351,10 +351,27 @@ struct StateEntry {
 
 class McState {
 public:
-    McState(StateEntry e, int me_id) : state(e.state), id(e.id), is_teammate(e.is_teammate),
-    me_id(me_id), initial_game_tick(e.state.game_state.current_tick), depth(0), ticks(0) {
-
+    McState(State state, int me_id, int id) :
+      state(state),
+      me_id(me_id),
+      id(id),
+      initial_id(id),
+      ticks(0) {
+      for (RobotEntity& r : state.robots) {
+        if (r.id == id) {
+          is_teammate = r.is_teammate;
+          break;
+        }
+      }
     }
+
+    McState(const McState &ms) :
+      state(ms.state),
+      me_id(ms.me_id),
+      id(ms.id),
+      initial_id(ms.id),
+      ticks(ms.ticks) {}
+
 
     void apply_action(const McAction& action) {
       for (RobotEntity& r : state.robots) {
@@ -363,17 +380,21 @@ public:
           break;
         }
       }
-      int new_id = (id % state.robots.size()) + 1;
       // 0.004166666
       double dt = (action.playout ? SIMULATION_PLAYOUT_DT : SIMULATION_DT); // * (sqrt(1 + depth));
       state.simulate(dt, false);
 #ifdef MY_DEBUG
       if (is_teammate && id == me_id) {
-        RobotEntity& e = state.robots[id - 1];
+        RobotEntity* e;
+        for (RobotEntity& r : state.robots) {
+          if (r.id == id) {
+            e = &r;
+          }
+        }
         stringstream ss;
-        float r = depth % 3 == 0 ? 1.0 : 0.0;
-        float g = depth % 3 == 1 ? 1.0 : 0.0;
-        float b = depth % 3 == 2 ? 1.0 : 0.0;
+        float b = depth() % 3 == 0 ? 1.0 : 0.0;
+        float g = depth() % 3 == 1 ? 1.0 : 0.0;
+        float r = depth() % 3 == 2 ? 1.0 : 0.0;
         //cout << "depth=" << depth << endl;
         float a = 0.3;
         if (action.playout) {
@@ -383,15 +404,12 @@ public:
           a = 0.1;
         }
         if (!action.playout) {
-          debug_draw->push_back({e.position.x, e.position.y, e.position.z, 1.0, r, g, b, a});
+          debug_draw->push_back({e->position.x, e->position.y, e->position.z, 1.0, r, g, b, a});
           debug_draw->push_back({state.ball.position.x, state.ball.position.y, state.ball.position.z, 2.0, r, g, b, 0.1});
         }
       }
 #endif
-      id = new_id;
-      if (new_id == me_id) {
-        depth++;
-      }
+      id = (id % state.robots.size()) + 1;
       ticks++;
       for (const RobotEntity& e : state.robots) {
         if (e.id == id) {
@@ -399,6 +417,11 @@ public:
           break;
         }
       }
+    }
+
+    // in real ticks
+    int depth() {
+      return ticks / state.robots.size();
     }
 
     bool is_terminal() const {
@@ -493,13 +516,16 @@ public:
       throw runtime_error("Robot not found");
     }
 
+    bool its_me() const {
+      return initial_id == me_id;
+    }
+
     State state;
-    int id;
-    bool is_teammate;
     int me_id;
-    int initial_game_tick;
-    int depth; // in real ticks
-    int ticks;
+    int id;
+    int initial_id = -1;
+    bool is_teammate;
+    int ticks; // not real, simulation tree "ticks", use depth() instead
 };
 
 /**
@@ -510,7 +536,7 @@ public:
 class Engine {
 public:
   Engine(const Robot& me, const Rules& rules, const Game& game, const map<int, HistoryItem>& history) :
-  current{State(me.id, rules, game, history), me.id, me.is_teammate, Action(), NULL} {}
+  current{State(me.id, rules, game, history), me.id, me.id} {}
 
   Action find_best() {
     return monte_carlo();
@@ -541,7 +567,6 @@ public:
 
 private:
     Action monte_carlo() {
-      McState state(current, current.id);
       UCT<McState, McAction> uct;
 
       uct.uct_k = UCT_K;
@@ -549,10 +574,10 @@ private:
       uct.max_iterations = UTC_MAX_ITERATIONS;
       uct.simulation_depth = UTC_SIMULATION_DEPTH;
 
-      return uct.run(state).action;
+      return uct.run(current).action;
     }
 
-  StateEntry current;
+  McState current;
 };
 
 #endif //MYSTRATEGY_ENGINE_H

@@ -33,6 +33,7 @@ ostream& operator<<(ostream& stream, const model::Action& a);
 template <class State>
 bool is_best_node_or_parent(msa::mcts::TreeNodeT<State, McAction>* best_node,
     const msa::mcts::TreeNodeT<State, McAction>* node) {
+  if (best_node == NULL) return false;
   msa::mcts::TreeNodeT<State, McAction>* n = best_node;
   while (n) {
     if (n == node) {
@@ -44,7 +45,8 @@ bool is_best_node_or_parent(msa::mcts::TreeNodeT<State, McAction>* best_node,
 }
 
 template <class State>
-void debug_print_tree(msa::mcts::TreeNodeT<State, McAction>& node, msa::mcts::TreeNodeT<State, McAction>* best_node) {
+void debug_print_tree(msa::mcts::TreeNodeT<State, McAction>& node,
+    msa::mcts::TreeNodeT<State, McAction>* best_node = NULL) {
   string indent;
   for (int i = 0; i < node.get_depth(); ++i) indent += "   ";
 
@@ -177,6 +179,8 @@ namespace msa {
                 TreeNode root_node(current_state);
 
                 TreeNode* best_node = NULL;
+                int max_depth = 0;
+                int max_my_depth = 0;
 
                 // iterate
                 iterations = 0;
@@ -193,6 +197,9 @@ namespace msa {
 
                     // 2. EXPAND by adding a single child (if not terminal or not fully expanded)
                     if(!node->is_fully_expanded() && !node->is_terminal()) node = node->expand();
+
+                    if (node->get_depth() > max_depth) max_depth = node->get_depth();
+                    if (node->get_state().its_me() && node->get_depth() > max_my_depth) max_my_depth = node->get_depth();
                     
                     State state(node->get_state());
 
@@ -202,9 +209,9 @@ namespace msa {
                         for(int t = 0; t < simulation_depth; t++) {
                             if(state.is_terminal()) break;
 
-                            if(state.get_random_action(action))
-                                state.apply_action(action);
-                            else
+                            if(state.get_random_action(action)) {
+                              state.apply_action(action);
+                            } else
                                 break;
                         }
                     }
@@ -223,19 +230,21 @@ namespace msa {
                         depth++;
                     }
 
-                    // find most visited child
-                    best_node = get_best_child(&root_node);
-
                     // indicate end of loop for timer
                     timer.loop_end();
 
                     // exit loop if current total run duration (since init) exceeds max_millis
+#ifndef MY_DEBUG
                     if(max_millis > 0 && timer.check_duration(max_millis)) break;
+#endif
 
                     // exit loop if current iterations exceeds max_iterations
                     if(max_iterations > 0 && iterations > max_iterations) break;
                     iterations++;
                 }
+
+                // find most visited child
+                best_node = get_best_child(&root_node);
 
 #ifdef MY_DEBUG
                 //debug_print_tree(root_node, best_node);
@@ -247,8 +256,12 @@ namespace msa {
                   //best_node->get_state().state.my_score(true);
 #ifdef MY_DEBUG
                   cout << "best_value=" << (best_node->get_value() / (best_node->get_num_visits() + FLT_EPSILON))
-                    << ", during=" << timer.run_duration_millis()
-                    << " ms, iterations=" << iterations << ", visits=" << best_node->get_num_visits() << ";" << endl;
+                    << ", during=" << timer.run_duration_millis() << "ms"
+                    << ", iterations=" << iterations
+                    << ", visits=" << best_node->get_num_visits()
+                    << ", max_depth=" << (max_depth - 1)
+                    << ", max_my_depth=" << (max_my_depth - 1)
+                    << ";" << endl;
 #endif
                   return best_node->get_action();
                 }

@@ -21,6 +21,7 @@ static std::mt19937 g(rd());
 
 struct Evaluation {
     double value;
+    double score;
     double ball_my_min_distance = 0.0;
     double ball_enemy_min_distance = 0.0;
     double ball_my_sum_distance = 0.0;
@@ -45,6 +46,7 @@ struct Evaluation {
         int my_non_touch,
         int enemy_non_touch,
         double defender_z_pos) :
+        score(score),
         ball_my_min_distance(ball_my_min_distance),
         ball_enemy_min_distance(ball_enemy_min_distance),
         ball_my_sum_distance(ball_my_sum_distance),
@@ -83,23 +85,18 @@ struct Evaluation {
 
     Evaluation(double v) : value(v) {}
 
-    void add(Evaluation other) {
+    void add(const Evaluation& other) {
         value += other.value;
         //childs.push_back(other);
-    }
-    bool less(Evaluation other) {
-        return value < other.value;
     }
     float sum() {
         return value;
     }
 
     Evaluation negative() const {
-        return {-value};
-    }
-
-    static Evaluation empty() {
-        return {0};
+        Evaluation c = *this;
+        c.value = -value;
+        return c;
     }
 };
 
