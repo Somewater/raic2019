@@ -1,6 +1,7 @@
 #include "MyStrategy.h"
 #include "engine.h"
 #include "ofxMSAmcts.h"
+#include "Starter.h"
 
 using namespace model;
 
@@ -76,6 +77,7 @@ string MyStrategy::custom_rendering() {
 
 double ms_sum = 0.0;
 int ms_count = 0;
+int starter_startegy_cooldown = 0;
 
 void engine_tick(const Robot& me, const Rules& rules, const Game& game, Action& action, map<int,HistoryItem>& history) {
   Engine engine(me, rules, game, history);
@@ -91,16 +93,30 @@ void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Acti
 
   debug_text->clear();
   debug_draw->clear();
-  //check_engine_correctness(me, rules, game, action,history); return;
-  //if (game.current_tick > 100) print_r1_r2_positions(me, rules, game, action);
-  engine_tick(me, rules, game, action, history);
+
+  int available_ms = ms_count * 20 + 20000 - ms_sum;
+  if (starter_startegy_cooldown > 0 || available_ms < 1000 /*0*/) {
+    if (starter_startegy_cooldown <= 0) {
+      starter_startegy_cooldown += 50;
+      cout << "Time exceeded, use Starter by " << 50 << " next ticks. Tick=" << ms_count << ", ms_sum="
+        << ms_sum << ", available_ms="
+        << available_ms << ", diff=" << (available_ms - ms_sum) << endl;
+    }
+    starter_startegy_cooldown--;
+    // simple strategy
+    Starter starter;
+    starter.act(me, rules, game, action);
+  } else {
+    //check_engine_correctness(me, rules, game, action,history); return;
+    //if (game.current_tick > 100) print_r1_r2_positions(me, rules, game, action);
+    engine_tick(me, rules, game, action, history);
+  }
 
   double ms = duration_cast<nanoseconds>(steady_clock::now() - start).count() * 0.000001;
   ms_sum += ms;
   ms_count++;
-  if (ms_count % 5000 == 0) {
-    cout << "Act: " << ms << " ms, avg: " << (ms_sum / ms_count) << " ms, sum: " << ms_sum << " ms by "
-     << ms_count << " ticks" << endl;
+  if (ms_count % 2000 == 0) {
+    cout << "tick=" << ms_count << " ms=" << ms << " avg=" << (ms_sum / ms_count) << " sum=" << ms_sum << " available=" << available_ms << endl;
   }
 }
 
