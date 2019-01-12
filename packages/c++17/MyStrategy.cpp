@@ -81,7 +81,9 @@ int starter_startegy_cooldown = 0;
 
 void engine_tick(const Robot& me, const Rules& rules, const Game& game, Action& action, map<int,HistoryItem>& history) {
   Engine engine(me, rules, game, history);
-  //engine.apply_defender();
+  if (game.current_tick < 100) {
+    engine.apply_defender();
+  }
   action = engine.find_best();
   history[me.id] = {game.current_tick, action};
 }
