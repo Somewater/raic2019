@@ -98,7 +98,7 @@ void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Acti
   double ms = duration_cast<nanoseconds>(steady_clock::now() - start).count() * 0.000001;
   ms_sum += ms;
   ms_count++;
-  if (ms_count % 10000 == 0) {
+  if (ms_count % 5000 == 0) {
     cout << "Act: " << ms << " ms, avg: " << (ms_sum / ms_count) << " ms, sum: " << ms_sum << " ms by "
      << ms_count << " ticks" << endl;
   }
