@@ -67,8 +67,8 @@ struct Evaluation {
         score += ball_velocity_z * 0.1;
         score -= my_non_touch * my_non_touch * my_non_touch;
         score += enemy_non_touch * enemy_non_touch * enemy_non_touch;
-        if (defender_z_pos > -30) {
-          score -= pow(abs((-30 - defender_z_pos)), 3);
+        if (defender_z_pos > -20) {
+          score -= pow(abs((-20 - defender_z_pos)), 3);
         }
 //        std::cout <<
 //            "SCORE: ball_my_min_distance=" << (ball_my_min_distance * ball_my_min_distance * 0.02) <<
