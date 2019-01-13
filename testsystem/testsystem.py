@@ -16,6 +16,8 @@ from collections import *
 import http.server
 import socketserver
 import requests
+import threading
+import math
 
 root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
@@ -85,9 +87,7 @@ def run_processes_using_system(localrunner_cmd, player1_cmd, player2_cmd = None,
     #print(cmd)
     os.system(cmd)
 
-def run_game(tmp_filepath, player1_root, player2_root = None, verbose: bool = True) -> Tuple[int, int]:
-    uid = random.randint(0, 1000000)
-    result_filepath = os.path.join(tmp_filepath, 'result_%d.txt' % uid)
+def run_game(result_filepath, player1_root, player2_root = None, verbose: bool = True) -> Tuple[int, int]:
     player1_port = 30000 + random.randint(1, 10000)
     player2_port = 30000 + random.randint(1, 10000)
     noshow = True
@@ -106,26 +106,6 @@ def run_game(tmp_filepath, player1_root, player2_root = None, verbose: bool = Tr
     player2_cmd = '%s/packages/c++17/MyStrategy localhost %d 0000000000000000' % (player2_root, player2_port) if player2_root else None
 
     run_processes_using_system(localrunner_cmd, player1_cmd, player2_cmd, verbose)
-
-    if os.path.exists(result_filepath):
-        scores = []
-        with open(result_filepath) as f:
-            for l in f:
-                if ':' in l:
-                    score = int(l.split(':')[1])
-                    scores.append(score)
-                    if len(scores) == 2:
-                        break
-        if len(scores) == 2:
-            return (scores[0], scores[1])
-        else:
-            print('Unexpected result file format in %s:\n' % result_filepath)
-            with open(result_filepath) as f:
-                for l in f:
-                    print('>', l.strip())
-        os.unlink(result_filepath)
-    else:
-        print('Result file %s not found' % result_filepath)
 
 def confident(a, alpha=0.99):
     mean = np.mean(a)
@@ -223,6 +203,31 @@ def server_daemon(all_results_filepath, lock):
     with socketserver.TCPServer(("0.0.0.0", 14526), HandlerMy) as httpd:
         httpd.serve_forever()
 
+def read_result(result_filepath):
+    if os.path.exists(result_filepath):
+        scores = []
+        with open(result_filepath) as f:
+            for l in f:
+                if ':' in l:
+                    score = int(l.split(':')[1])
+                    scores.append(score)
+                    if len(scores) == 2:
+                        break
+        if len(scores) == 2:
+            return (scores[0], scores[1])
+        else:
+            print('Unexpected result file format in %s:\n' % result_filepath)
+            with open(result_filepath) as f:
+                for l in f:
+                    print('>', l.strip())
+        os.unlink(result_filepath)
+    else:
+        print('Result file %s not found' % result_filepath)
+
+class DummyThread:
+    def join(self):
+        pass
+
 if __name__ == '__main__':
     argparser = argparse.ArgumentParser(description='Game testing system CLI')
     argparser.add_argument('--tmp', default='/var/tmp/raic2018')
@@ -238,6 +243,7 @@ if __name__ == '__main__':
     argparser.add_argument('--stat', action='store_true')
     argparser.add_argument('--server_daemon', action='store_true')
     argparser.add_argument('--server_result', action='store_true')
+    argparser.add_argument('--parallel', default='1')
     args = argparser.parse_args()
     print('ARGS:', args)
 
@@ -272,35 +278,58 @@ if __name__ == '__main__':
     if not os.path.exists(args.tmp):
         os.mkdir(args.tmp)
 
+    thread_count = int(args.parallel) if args.parallel else 1
+    retry_count = int(args.retry)
+    retry_batch_count = math.ceil(retry_count / thread_count)
     scores = []
-    for i in range(int(args.retry)):
-        result = run_game(args.tmp, player1_root, player2_root, args.verbose)
-        if result:
-            r1, r2 = result
-            cols = [player1_name, payer1_commit or '', r1, player2_name, payer2_commit or '', r2]
-            cols = [str(c) for c in cols]
-            if args.server_result:
-                requests.post('http://atlantor.ru:14526', data="\t".join(cols))
+    count = 0
+    i = 0
+    for _ in range(retry_batch_count):
+        game_threads = []
+        for _ in range(thread_count):
+            count += 1
+            if count > retry_count:
+                break
+            result_filepath = os.path.join(args.tmp, 'result_%d.txt' % random.randint(0, 1000000))
+            if thread_count > 1:
+                t = threading.Thread(target=run_game, args=(result_filepath, player1_root, player2_root, args.verbose))
+                t.start()
             else:
-                with lock:
-                    with open(all_results_filepath, 'a') as f:
-                        w = csv.writer(f, delimiter='\t')
-                        w.writerow(cols)
-            score = 0
-            if r1 > r2:
-                score = 1
-            elif r1 < r2:
-                score = -1
-            scores.append(score)
-            r1, r2 = confident([0] + scores, alpha)
-            print('%d. Run result: %s, score: %f, confidence: [%f : %f]' % (i, repr(result), score, r1, r2))
-            if r1 > 0:
-                print('p1 is better')
-                if args.stat_exit:
-                    sys.exit(0)
-            elif r2 < 0:
-                print('p2 is better')
-                if args.stat_exit:
-                    sys.exit(0)
-        else:
-            print('%d. Run result: %s' % (i, repr(result)))
+                run_game(result_filepath, player1_root, player2_root, args.verbose)
+                t = DummyThread()
+            game_threads.append((t, result_filepath))
+
+        for t, result_filepath in game_threads:
+            t.join()
+            result = read_result(result_filepath)
+            if result:
+                r1, r2 = result
+                cols = [player1_name, payer1_commit or '', r1, player2_name, payer2_commit or '', r2]
+                cols = [str(c) for c in cols]
+                if args.server_result:
+                    requests.post('http://atlantor.ru:14526', data="\t".join(cols))
+                else:
+                    with lock:
+                        with open(all_results_filepath, 'a') as f:
+                            w = csv.writer(f, delimiter='\t')
+                            w.writerow(cols)
+                score = 0
+                if r1 > r2:
+                    score = 1
+                elif r1 < r2:
+                    score = -1
+                scores.append(score)
+                r1, r2 = confident([0] + scores, alpha)
+                print('%d. Run result: %s, score: %f, confidence: [%f : %f]' % (i, repr(result), score, r1, r2))
+                i += 1
+                if r1 > 0:
+                    print('p1 is better')
+                    if args.stat_exit:
+                        sys.exit(0)
+                elif r2 < 0:
+                    print('p2 is better')
+                    if args.stat_exit:
+                        sys.exit(0)
+            else:
+                print('%d. Run result: %s' % (i, repr(result)))
+                i += 1
