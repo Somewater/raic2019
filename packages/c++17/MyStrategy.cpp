@@ -79,9 +79,13 @@ double ms_sum = 0.0;
 int ms_count = 0;
 int starter_startegy_cooldown = 0;
 
-void engine_tick(const Robot& me, const Rules& rules, const Game& game, Action& action, map<int,HistoryItem>& history) {
+int normalized_tick(const MyStrategy* self, const model::Game& game, const Rules& rules) {
+  return max(0, game.current_tick - self->last_goal_tick);
+}
+
+void engine_tick(MyStrategy* self, const Robot& me, const Rules& rules, const Game& game, Action& action, map<int,HistoryItem>& history) {
   Engine engine(me, rules, game, history);
-  if (game.current_tick < 100) {
+  if (normalized_tick(self, game, rules) < 100) {
     engine.apply_defender();
   }
   action = engine.find_best();
@@ -90,6 +94,7 @@ void engine_tick(const Robot& me, const Rules& rules, const Game& game, Action& 
 
 void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Action& action) {
   steady_clock::time_point start = steady_clock::now();
+  apply_score_changes(me, rules, game, action);
   //if (use_prev_action(me, rules, game, action)) return;
   //if (game.current_tick < 10000) return;
 
@@ -111,7 +116,7 @@ void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Acti
   } else {
     //check_engine_correctness(me, rules, game, action,history); return;
     //if (game.current_tick > 100) print_r1_r2_positions(me, rules, game, action);
-    engine_tick(me, rules, game, action, history);
+    engine_tick(this, me, rules, game, action, history);
   }
 
   double ms = duration_cast<nanoseconds>(steady_clock::now() - start).count() * 0.000001;

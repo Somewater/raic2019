@@ -11,6 +11,8 @@
 #include <map>
 #include "Starter.h"
 
+using namespace model;
+
 class MyStrategy : public Strategy {
 public:
 
@@ -28,10 +30,19 @@ public:
     return false;
   }
 
+  void apply_score_changes(const model::Robot& me, const model::Rules& rules, const model::Game& game, model::Action& action) {
+    if (abs(prev_ball_z - game.ball.z) > rules.arena.depth / 4) {
+      last_goal_tick = game.current_tick;
+    }
+    prev_ball_z = game.ball.z;
+  }
+
 #ifdef MY_DEBUG
   std::string custom_rendering() override;
 #endif
   map<int, HistoryItem> history;
+  int last_goal_tick = 0;
+  int prev_ball_z = 0;
 };
 
 #endif
