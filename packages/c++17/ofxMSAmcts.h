@@ -72,7 +72,7 @@ void debug_print_tree(msa::mcts::TreeNodeT<State, McAction>& node,
     << (is_best_node_or_parent(best_node, &node) ? "*" : " ")
     << "[id=" << node.get_state().initial_id
     << " is_teammate=" << is_teammate_by_initial_id(node)
-    << " me_id=" << node.get_state().me_id
+    << " me_id=" << node.get_state().state.me_id
     << " value=" << uct_exploitation
     << " exploration=" << uct_exploration
     << " uct=" << uct_score
@@ -267,7 +267,7 @@ namespace msa {
                 best_node = get_best_child(&root_node); // TODO: get_most_visited_child, get_best_uct_child ?
 
 #ifdef MY_DEBUG
-                debug_print_tree(root_node, best_node);
+                //debug_print_tree(root_node, best_node);
 #endif
 
                 // return best node's action

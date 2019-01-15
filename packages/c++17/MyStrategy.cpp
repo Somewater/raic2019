@@ -22,12 +22,21 @@ void show_state(State& state) {
 void check_engine_correctness(const Robot& me, const Rules& rules, const Game& game, Action& action, map<int,HistoryItem>& history) {
 
   State state(me.id, rules, game, history);
-  for (int i = 0; i < 100; i++) {
+
+  Vector3D last_pos, last_velocity;
+  double last_time;
+  char collide_type = state.corridor_last_point(state.ball, last_pos, last_velocity, last_time);
+  *debug_text += "ball collide type: ";
+  *debug_text += collide_type ? collide_type : '0';
+  *debug_text += "\\n";
+  if (collide_type) {
+    debug_draw->push_back({last_pos.x, last_pos.y, last_pos.z, 2, 1, 0, 0, 1});
+  }
+  return;
+
+  for (int i = 0; i < 200; i++) {
 //    for (RobotEntity& r : state.robots) {
-//      bool jump = (state.ball.position.distance_to(r.position) < (BALL_RADIUS + ROBOT_MAX_RADIUS) && r.position.y < state.ball.position.y);
-//      if (jump) {
-//        r.action.jump_speed = ROBOT_MAX_JUMP_SPEED;
-//      }
+//      r.action.target_velocity_y = 1000;
 //    }
 
     state.simulate(0, false);
@@ -102,6 +111,10 @@ void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Acti
   debug_draw->clear();
 
   int available_ms = ms_count * 20 + 20000 - ms_sum;
+#ifdef MY_DEBUG
+  check_engine_correctness(me, rules, game, action,history);
+  engine_tick(this, me, rules, game, action, history);
+#else
   if (starter_startegy_cooldown > 0 || available_ms < 1000 /*0*/) {
     if (starter_startegy_cooldown <= 0) {
       starter_startegy_cooldown += 50;
@@ -114,10 +127,9 @@ void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Acti
     Starter starter;
     starter.act(me, rules, game, action);
   } else {
-    //check_engine_correctness(me, rules, game, action,history); return;
-    //if (game.current_tick > 100) print_r1_r2_positions(me, rules, game, action);
     engine_tick(this, me, rules, game, action, history);
   }
+#endif
 
   double ms = duration_cast<nanoseconds>(steady_clock::now() - start).count() * 0.000001;
   ms_sum += ms;

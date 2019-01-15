@@ -1,6 +1,8 @@
 #ifndef MYSTRATEGY_CONST_H
 #define MYSTRATEGY_CONST_H
 
+#include "mymath.h"
+
 #define UCT_K 1.41421
 #define UTC_MAX_ITERATIONS 1000
 #define UTC_SIMULATION_DEPTH 1
@@ -9,5 +11,8 @@
 
 #define MAX_ACTIONS 19
 //#define MY_DEBUG 1
+
+#define TICK_DT  0.01666
+#define MICRO_TICK_DT  0.0001666
 
 #endif //MYSTRATEGY_CONST_H

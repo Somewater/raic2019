@@ -298,21 +298,123 @@ public:
         ball_enemy_sum_distance += dist;
       }
     }
-    return Evaluation(score,
-            ball_my_min_distance,
-            ball_enemy_min_distance,
-            ball_my_sum_distance,
-            ball_enemy_sum_distance,
-            ball.position.z,
-            ball.position.x,
-            ball.velocity.z,
-            robots.size() / 2 - my_touch,
-            robots.size() / 2 - enemy_touch,
-            defender_z_pos);
+    Vector3D ball_position, ball_velocity;
+    double last_time;
+    char last_point_type = corridor_last_point(ball, ball_position, ball_velocity, last_time);
+    if (last_point_type) {
+      return Evaluation(score,
+                        ball_my_min_distance,
+                        ball_enemy_min_distance,
+                        ball_my_sum_distance,
+                        ball_enemy_sum_distance,
+                        ball_position.z,
+                        ball_position.x,
+                        ball_velocity.z,
+                        robots.size() / 2 - my_touch,
+                        robots.size() / 2 - enemy_touch,
+                        defender_z_pos);
+    } else {
+      return Evaluation(score,
+                        ball_my_min_distance,
+                        ball_enemy_min_distance,
+                        ball_my_sum_distance,
+                        ball_enemy_sum_distance,
+                        ball.position.z,
+                        ball.position.x,
+                        ball.velocity.z,
+                        robots.size() / 2 - my_touch,
+                        robots.size() / 2 - enemy_touch,
+                        defender_z_pos);
+    }
   }
 
   bool is_goal() const {
     return abs(ball.position.z) > rules.arena.depth * 0.5 + ball.radius;
+  }
+
+  char corridor_last_point(const Entity& e, Vector3D& last_position, Vector3D& last_vector, double& last_time) const {
+    double x_time, z_time = 0;
+    const double G = rules.GRAVITY;
+    // x time
+    double x_velocity_sign = SIGN(e.velocity.x);
+    if (x_velocity_sign == 0) {
+      x_time = DBL_MAX;
+    } else {
+      double x_distance = rules.arena.goal_width * 0.5 - x_velocity_sign * e.position.x;
+      x_time = x_distance / abs(e.velocity.x);
+    }
+
+    // z time
+    double z_velocity_sign = SIGN(e.velocity.z);
+    if (z_velocity_sign == 0) {
+      z_time = DBL_MAX;
+    } else {
+      double z_distance = rules.arena.depth * 0.5 - z_velocity_sign * e.position.z;
+      z_time = z_distance / abs(e.velocity.z);
+    }
+
+    double MAX_ASSUMPTION_TIME = 10;
+    if ((z_time > MAX_ASSUMPTION_TIME && x_time > MAX_ASSUMPTION_TIME) || x_time < 0 || z_time < 0) {
+      // lie down or jump along Y axis
+      return '\0';
+    }
+
+    char collision_type = x_time < z_time ? 'x' : 'z';
+    double collide_time = x_time < z_time ? x_time : z_time;
+
+    // y time
+    double y_pos = e.position.y;
+    double yv = e.velocity.y;
+    double t = 0;
+    int while_counter = 0;
+    while (t < collide_time) {
+      if (DBL_ZERO(y_pos) && (DBL_ZERO(yv))) {
+        break;
+      }
+
+      double x1, x2;
+      double a_coef = -G * 0.5;
+      double b_coef = yv - MICRO_TICK_DT * G * 0.5;
+      double floor_y = 0 + e.radius;
+      double ceil_y = rules.arena.height - e.radius;
+      int result = square_equation_non_negative(a_coef, b_coef, y_pos - floor_y, x1, x2);
+      double floor_time = result == 2 ? min(x1, x2) : (result == 1 ? x1 : DBL_MAX);
+      result = square_equation_non_negative(a_coef, b_coef, y_pos - ceil_y, x1, x2);
+      double ceil_time = result == 2 ? min(x1, x2) : (result == 1 ? x1 : DBL_MAX);
+
+      if ((floor_time == DBL_MAX || t + floor_time > collide_time) && (ceil_time == DBL_MAX || t + ceil_time > collide_time)) {
+        double dt = collide_time - t;
+        t = collide_time;
+        y_pos += yv * dt - G * 0.5 * dt * (MICRO_TICK_DT + dt);
+      } else {
+        double dt = min(floor_time, ceil_time);
+        double normal_y = floor_time < ceil_time ? 1.0 : -1.0;
+        // floor or ceil collision
+        double penetration = MICRO_TICK_DT * abs(yv);
+        y_pos += yv * dt - G * 0.5 * dt * (MICRO_TICK_DT + dt); // s0 + v0 * t - G/2 * t**2 - G/2 * dt * t -> s1
+        yv += -G * dt;
+        y_pos = y_pos + normal_y * penetration;
+        // double velocity = e.velocity.dot(dan.normal) - e.radius_change_speed;
+        double velocity = yv * normal_y;
+        if (velocity < 0) {
+          yv -= normal_y * (1 + e.arena_e) * velocity;
+        }
+        t += dt;
+      }
+
+      if (++while_counter > 10) {
+        return '\0';
+      }
+    }
+
+    last_position.x = e.position.x + e.velocity.x * collide_time;
+    last_position.y = y_pos;
+    last_position.z = e.position.z + e.velocity.z * collide_time;
+    last_time = collide_time;
+    last_vector.x = e.velocity.x;
+    last_vector.y = yv;
+    last_vector.z = e.velocity.z;
+    return collision_type;
   }
 
   State (const State &other) : me_id(other.me_id),
