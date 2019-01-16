@@ -590,20 +590,30 @@ public:
           actions.push_back({prev_action});
 
           if (robot.touch) {
-            for (int x = -100; x <= 100; x += 100) {
-              for (int z = -100; z <= 100; z += 100) {
-                Action a;
-                a.target_velocity_x = x;
-                a.target_velocity_z = z;
+            Vector3D distance = state.ball.position.plane().sub(robot.position.plane());
+            Vector3D v = distance.normalize().mul(state.rules.MAX_ENTITY_SPEED);
+            double x = v.x;
+            double z = v.z;
+
+            static const double dcos[] = {cos(-M_PI * 0), cos(-M_PI * -1), cos(-M_PI * 0.5), cos(-M_PI * -0.5), cos(-M_PI * -0.25), cos(-M_PI * 0.25), cos(-M_PI * 0.75), cos(-M_PI * -0.75)};
+            static const double dsin[] = {sin(-M_PI * 0), sin(-M_PI * -1), sin(-M_PI * 0.5), sin(-M_PI * -0.5), sin(-M_PI * -0.25), sin(-M_PI * 0.25), sin(-M_PI * 0.75), sin(-M_PI * -0.75)};
+            int n = robot.is_teammate ? (distance.len() > 10 ? 6 : 8) : 4;
+            for (int i = 0; i < n; ++i) {
+              double cs = dcos[i];
+              double sn = dsin[i];
+              double vx = x * cs - z * sn;
+              double vz = x * sn + z * cs;
+              Action a;
+              a.target_velocity_x = vx;
+              a.target_velocity_z = vz;
+              if (!equal(a, prev_action)) actions.push_back({a});
+              bool jump =
+                  state.ball.position.distance_to(robot.position) <
+                    (state.rules.BALL_RADIUS + state.rules.ROBOT_MAX_RADIUS) * 1.2
+                    && robot.position.y < state.ball.position.y;
+              if (jump) {
+                a.jump_speed = 15;
                 if (!equal(a, prev_action)) actions.push_back({a});
-                bool jump =
-                    state.ball.position.distance_to(robot.position) <
-                      (state.rules.BALL_RADIUS + state.rules.ROBOT_MAX_RADIUS)
-                      && robot.position.y < state.ball.position.y;
-                if (jump) {
-                  a.jump_speed = 15;
-                  if (!equal(a, prev_action)) actions.push_back({a});
-                }
               }
             }
           }
