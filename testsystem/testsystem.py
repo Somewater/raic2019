@@ -238,7 +238,7 @@ if __name__ == '__main__':
     argparser.add_argument('--n2', default='')
     argparser.add_argument('--alpha', default='0.99')
     argparser.add_argument('--verbose', action='store_true')
-    argparser.add_argument('--retry', default='100')
+    argparser.add_argument('--retry', default='1000')
     argparser.add_argument('--stat_exit', action='store_true')
     argparser.add_argument('--stat', action='store_true')
     argparser.add_argument('--server_daemon', action='store_true')
