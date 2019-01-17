@@ -13,6 +13,6 @@
 //#define MY_DEBUG 1
 
 #define TICK_DT  0.01666
-#define MICRO_TICK_DT  0.0001666
+#define MICRO_TICK_DT 0.0001666
 
 #endif //MYSTRATEGY_CONST_H
