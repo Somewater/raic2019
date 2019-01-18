@@ -597,7 +597,7 @@ public:
 
             static const double dcos[] = {cos(-M_PI * 0), cos(-M_PI * -1), cos(-M_PI * 0.5), cos(-M_PI * -0.5), cos(-M_PI * -0.25), cos(-M_PI * 0.25), cos(-M_PI * 0.75), cos(-M_PI * -0.75)};
             static const double dsin[] = {sin(-M_PI * 0), sin(-M_PI * -1), sin(-M_PI * 0.5), sin(-M_PI * -0.5), sin(-M_PI * -0.25), sin(-M_PI * 0.25), sin(-M_PI * 0.75), sin(-M_PI * -0.75)};
-            int n = robot.is_teammate ? (distance.len() > 10 ? 6 : 8) : 4;
+            int n = 8; //robot.is_teammate ? (distance.len() > 10 ? 6 : 8) : 4;
             for (int i = 0; i < n; ++i) {
               double cs = dcos[i];
               double sn = dsin[i];
