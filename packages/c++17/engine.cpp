@@ -79,7 +79,7 @@ void update(const Rules& rules, const double delta_time, vector<RobotEntity>& ro
             (target_velocity_change.normalize().mul(acceleration * delta_time)).clamp(target_velocity_change.len()));
       }
     }
-    if (robot.action.use_nitro) {
+    if (robot.action.use_nitro && robot.nitro_amount > 0) {
       Vector3D target_velocity_change = (target_velocity.sub(robot.velocity)).clamp(
           robot.nitro_amount * rules.NITRO_POINT_VELOCITY_CHANGE);
       if (target_velocity_change.len() > 0) {
