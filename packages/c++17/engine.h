@@ -107,7 +107,7 @@ public:
                 id(id),
                 is_teammate(is_teammate),
                 action(action),
-                nitro_amount(nitro_amount {
+                nitro_amount(nitro_amount) {
     this->arena_e = arena_e;
     this->is_robot = true;
     this->is_ball = false;
