@@ -115,7 +115,7 @@ void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Acti
   check_engine_correctness(me, rules, game, action,history);
   engine_tick(this, me, rules, game, action, history);
 #else
-  if (starter_startegy_cooldown > 0 || available_ms < 1000 /*0*/) {
+  if (false && (starter_startegy_cooldown > 0 || available_ms < 1000 /*0*/)) {
     if (starter_startegy_cooldown <= 0) {
       starter_startegy_cooldown += 50;
       cout << "Time exceeded, use Starter by " << 50 << " next ticks. Tick=" << ms_count << ", ms_sum="
