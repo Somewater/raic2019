@@ -62,8 +62,8 @@ struct Evaluation {
         score += ball_enemy_min_distance * ball_enemy_min_distance * 0.02;
         score -= ball_my_sum_distance * ball_my_sum_distance * 0.001;
         score += ball_enemy_sum_distance * ball_enemy_sum_distance * 0.0005;
-        score += ball_position_z * 1;
-        score += (ball_position_z > 0 ? -1 : 1) * abs(ball_position_x) * 0.5;
+        score += ball_position_z * 0.3;
+        score += (ball_position_z > 0 ? -1 : 1) * abs(ball_position_x) * 0.1;
         score += ball_velocity_z * 0.1;
         score -= my_non_touch * my_non_touch * my_non_touch;
         score += enemy_non_touch * enemy_non_touch * enemy_non_touch;
@@ -80,7 +80,7 @@ struct Evaluation {
 //            " ball_velocity_z=" << (ball_velocity_z * 0.1) <<
 //            " my_non_touch=" << (my_non_touch * my_non_touch * my_non_touch) <<
 //            " enemy_non_touch=" << (enemy_non_touch * enemy_non_touch * enemy_non_touch) << std::endl;
-        value = score * 0.5 + 0.5;
+        value = score;
     }
 
     Evaluation(double v) : value(v) {}

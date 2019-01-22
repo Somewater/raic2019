@@ -23,6 +23,14 @@ void check_engine_correctness(const Robot& me, const Rules& rules, const Game& g
 
   State state(me.id, rules, game, history);
 
+  stringstream ss0;
+  *debug_text += "id=";
+  *debug_text += to_string(me.id);
+  *debug_text += " action: ";
+  ss0 << action;
+  *debug_text += ss0.str();
+  *debug_text += "\\n";
+
   Vector3D last_pos, last_velocity;
   double last_time;
   char collide_type = state.corridor_last_point(state.ball, last_pos, last_velocity, last_time);
@@ -112,8 +120,8 @@ void MyStrategy::act(const Robot& me, const Rules& rules, const Game& game, Acti
 
   int available_ms = ms_count * 20 + 20000 - ms_sum;
 #ifdef MY_DEBUG
-  check_engine_correctness(me, rules, game, action,history);
   engine_tick(this, me, rules, game, action, history);
+  check_engine_correctness(me, rules, game, action,history);
 #else
   if (!MY_TEST && (starter_startegy_cooldown > 0 || available_ms < 1000 /*0*/)) {
     if (starter_startegy_cooldown <= 0) {
