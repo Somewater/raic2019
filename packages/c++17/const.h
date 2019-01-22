@@ -11,6 +11,7 @@
 
 #define MAX_ACTIONS 19
 //#define MY_DEBUG 1
+#define MY_TEST 1
 
 #define TICK_DT  0.01666
 #define MICRO_TICK_DT 0.0001666
