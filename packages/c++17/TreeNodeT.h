@@ -80,7 +80,7 @@ struct Evaluation {
 //            " ball_velocity_z=" << (ball_velocity_z * 0.1) <<
 //            " my_non_touch=" << (my_non_touch * my_non_touch * my_non_touch) <<
 //            " enemy_non_touch=" << (enemy_non_touch * enemy_non_touch * enemy_non_touch) << std::endl;
-        value = score * 0.5 + 0.5;
+        value = score;
     }
 
     Evaluation(double v) : value(v) {}

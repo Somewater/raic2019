@@ -264,7 +264,7 @@ namespace msa {
                 }
 
                 // find most visited child
-                best_node = get_best_child(&root_node); // TODO: get_most_visited_child, get_best_uct_child ?
+                best_node = get_most_visited_child(&root_node); // TODO: get_most_visited_child, get_best_uct_child ?
 
 #ifdef MY_DEBUG
                 //debug_print_tree(root_node, best_node);

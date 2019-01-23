@@ -330,7 +330,7 @@ public:
   }
 
   bool is_goal() const {
-    return abs(ball.position.z) > rules.arena.depth * 0.5 + ball.radius;
+    return abs(ball.position.z) > rules.arena.depth * 0.5 + ball.radius + DBL_EPSILON;
   }
 
   char corridor_last_point(const Entity& e, Vector3D& last_position, Vector3D& last_vector, double& last_time) const {
