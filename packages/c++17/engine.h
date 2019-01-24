@@ -260,14 +260,14 @@ public:
 
   // -1.0 .. 1.0
   Evaluation my_score() const {
+    double score = 0.0;
     if (is_goal()) {
       if (ball.position.z > 0) {
-        return {10000000};
+        score = 10000000 * (13 - abs(ball.position.x));
       } else {
-        return {-10000000};
+        score = -10000000 * (13 - abs(ball.position.x));
       }
     }
-    double score = 0.0;
     double ball_my_min_distance = 1000000;
     double ball_my_sum_distance = 0;
     double ball_enemy_min_distance = 1000000;
