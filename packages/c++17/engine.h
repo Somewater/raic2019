@@ -260,15 +260,14 @@ public:
 
   // -1.0 .. 1.0
   Evaluation my_score() const {
-    double score = 0.0;
     if (is_goal()) {
       if (ball.position.z > 0) {
-        score = 1000 * (20 - abs(ball.position.x));
+        return {10000000};
       } else {
-        score = -1000 * (20 - abs(ball.position.x));
+        return {-10000000};
       }
     }
-
+    double score = 0.0;
     double ball_my_min_distance = 1000000;
     double ball_my_sum_distance = 0;
     double ball_enemy_min_distance = 1000000;
@@ -331,7 +330,7 @@ public:
   }
 
   bool is_goal() const {
-    return abs(ball.position.z) > rules.arena.depth * 0.5 + ball.radius + DBL_EPSILON;
+    return abs(ball.position.z) > rules.arena.depth * 0.5 + ball.radius;
   }
 
   char corridor_last_point(const Entity& e, Vector3D& last_position, Vector3D& last_vector, double& last_time) const {
@@ -477,9 +476,7 @@ public:
       }
       // 0.004166666
       double dt = (action.playout ? SIMULATION_PLAYOUT_DT : SIMULATION_DT); // * (sqrt(1 + depth));
-      if (its_me()) {
-        state.simulate(dt, false);
-      }
+      state.simulate(dt, false);
 #ifdef MY_DEBUG
       if (is_teammate && id == state.me_id) {
         RobotEntity* e;
@@ -593,39 +590,15 @@ public:
           }
           actions.push_back({prev_action});
 
-          if (!its_me()) return;
-
           if (robot.touch) {
             Vector3D distance = state.ball.position.plane().sub(robot.position.plane());
             Vector3D v = distance.normalize().mul(state.rules.MAX_ENTITY_SPEED);
             double x = v.x;
             double z = v.z;
 
-            static const double dcos[] = {cos(-M_PI * 0), cos(-M_PI * -1),
-                                          cos(-M_PI * 0.005), cos(-M_PI * -0.005),
-                                          cos(-M_PI * 0.01), cos(-M_PI * -0.01),
-                                          cos(-M_PI * 0.02), cos(-M_PI * -0.02),
-                                          cos(-M_PI * 0.05), cos(-M_PI * -0.05),
-                                          cos(-M_PI * 0.1), cos(-M_PI * -0.1),
-                                          cos(-M_PI * 0.15), cos(-M_PI * -0.15),
-                                          cos(-M_PI * 0.2), cos(-M_PI * -0.2),
-                                          cos(-M_PI * 0.3), cos(-M_PI * -0.3),
-                                          cos(-M_PI * 0.5), cos(-M_PI * -0.5),
-                                          cos(-M_PI * -0.25), cos(-M_PI * 0.25),
-                                          cos(-M_PI * 0.75), cos(-M_PI * -0.75)};
-            static const double dsin[] = {sin(-M_PI * 0), sin(-M_PI * -1),
-                                          sin(-M_PI * 0.005), sin(-M_PI * -0.005),
-                                          sin(-M_PI * 0.01), sin(-M_PI * -0.01),
-                                          sin(-M_PI * 0.02), sin(-M_PI * -0.02),
-                                          sin(-M_PI * 0.05), sin(-M_PI * -0.05),
-                                          sin(-M_PI * 0.1), sin(-M_PI * -0.1),
-                                          sin(-M_PI * 0.15), sin(-M_PI * -0.15),
-                                          sin(-M_PI * 0.2), sin(-M_PI * -0.2),
-                                          sin(-M_PI * 0.3), sin(-M_PI * -0.3),
-                                          sin(-M_PI * 0.5), sin(-M_PI * -0.5),
-                                          sin(-M_PI * -0.25), sin(-M_PI * 0.25),
-                                          sin(-M_PI * 0.75), sin(-M_PI * -0.75)};
-            int n = 24; //robot.is_teammate ? (distance.len() > 10 ? 6 : 8) : 4;
+            static const double dcos[] = {cos(-M_PI * 0), cos(-M_PI * -1), cos(-M_PI * 0.5), cos(-M_PI * -0.5), cos(-M_PI * -0.25), cos(-M_PI * 0.25), cos(-M_PI * 0.75), cos(-M_PI * -0.75)};
+            static const double dsin[] = {sin(-M_PI * 0), sin(-M_PI * -1), sin(-M_PI * 0.5), sin(-M_PI * -0.5), sin(-M_PI * -0.25), sin(-M_PI * 0.25), sin(-M_PI * 0.75), sin(-M_PI * -0.75)};
+            int n = 8; //robot.is_teammate ? (distance.len() > 10 ? 6 : 8) : 4;
             for (int i = 0; i < n; ++i) {
               double cs = dcos[i];
               double sn = dsin[i];
@@ -637,7 +610,7 @@ public:
               if (!equal(a, prev_action)) actions.push_back({a});
               bool jump =
                   state.ball.position.distance_to(robot.position) <
-                    (state.rules.BALL_RADIUS + state.rules.ROBOT_MAX_RADIUS) * 1.5
+                    (state.rules.BALL_RADIUS + state.rules.ROBOT_MAX_RADIUS) * 1.2
                     && robot.position.y < state.ball.position.y;
               if (jump) {
                 a.jump_speed = 15;
