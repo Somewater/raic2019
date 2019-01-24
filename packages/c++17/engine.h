@@ -365,6 +365,7 @@ public:
 
     // y time
     double y_pos = e.position.y;
+    double y_pos_prev = e.position.y - 1000;
     double yv = e.velocity.y;
     double t = 0;
     int while_counter = 0;
@@ -372,6 +373,10 @@ public:
       if (DBL_ZERO(y_pos) && (DBL_ZERO(yv))) {
         break;
       }
+      if (abs(y_pos_prev - y_pos) < 0.3 && while_counter > 5) {
+        break;
+      }
+      y_pos_prev = y_pos;
 
       double x1, x2;
       double a_coef = -G * 0.5;
