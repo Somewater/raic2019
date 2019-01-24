@@ -595,15 +595,38 @@ public:
           }
           actions.push_back({prev_action});
 
-          if (robot.touch) {
+          if (robot.touch || its_me()) {
             Vector3D distance = state.ball.position.plane().sub(robot.position.plane());
             Vector3D v = distance.normalize().mul(state.rules.MAX_ENTITY_SPEED);
             double x = v.x;
             double z = v.z;
 
-            static const double dcos[] = {cos(-M_PI * 0), cos(-M_PI * -1), cos(-M_PI * 0.5), cos(-M_PI * -0.5), cos(-M_PI * -0.25), cos(-M_PI * 0.25), cos(-M_PI * 0.75), cos(-M_PI * -0.75)};
-            static const double dsin[] = {sin(-M_PI * 0), sin(-M_PI * -1), sin(-M_PI * 0.5), sin(-M_PI * -0.5), sin(-M_PI * -0.25), sin(-M_PI * 0.25), sin(-M_PI * 0.75), sin(-M_PI * -0.75)};
-            int n = robot.is_teammate ? (8) : 4;
+            static const double dcos[] = {cos(M_PI * 0),     cos(M_PI * -1),
+                                          cos(M_PI * 0.5),   cos(M_PI * -0.5),
+                                          cos(M_PI * 0.25),  cos(M_PI * -0.25),
+                                          cos(M_PI * 0.75),  cos(M_PI * -0.75),
+                                          cos(M_PI * 0.005), cos(M_PI * -0.005),
+                                          cos(M_PI * 0.01),  cos(M_PI * -0.01),
+                                          cos(M_PI * 0.02),  cos(M_PI * -0.02),
+                                          cos(M_PI * 0.05),  cos(M_PI * -0.05),
+                                          cos(M_PI * 0.1),   cos(M_PI * -0.1),
+                                          cos(M_PI * 0.15),  cos(M_PI * -0.15),
+                                          cos(M_PI * 0.2),   cos(M_PI * -0.2),
+                                          cos(M_PI * 0.3),   cos(M_PI * -0.3)};
+            static const double dsin[] = {sin(M_PI * 0),     sin(M_PI * -1),
+                                          sin(M_PI * 0.5),   sin(M_PI * -0.5),
+                                          sin(M_PI * 0.25),  sin(M_PI * -0.25),
+                                          sin(M_PI * 0.75),  sin(M_PI * -0.75),
+                                          sin(M_PI * 0.005), sin(M_PI * -0.005),
+                                          sin(M_PI * 0.01),  sin(M_PI * -0.01),
+                                          sin(M_PI * 0.02),  sin(M_PI * -0.02),
+                                          sin(M_PI * 0.05),  sin(M_PI * -0.05),
+                                          sin(M_PI * 0.1),   sin(M_PI * -0.1),
+                                          sin(M_PI * 0.15),  sin(M_PI * -0.15),
+                                          sin(M_PI * 0.2),   sin(M_PI * -0.2),
+                                          sin(M_PI * 0.3),   sin(M_PI * -0.3)};
+            int n = its_me() ? (robot.touch ? 24 : 4) : 1;
+
             for (int i = 0; i < n; ++i) {
               double cs = dcos[i];
               double sn = dsin[i];
